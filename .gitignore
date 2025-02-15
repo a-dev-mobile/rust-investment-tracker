@@ -1,0 +1,9 @@
+/target
+Cargo.lock
+.env
+*.log
+.idea/
+
+rust_doc
+.vscode/scripts/*
+

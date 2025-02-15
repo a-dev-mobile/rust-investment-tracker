@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+
+    {
+      "label": "cargo build:local",
+      "type": "shell",
+      "command": "APP_ENV=local cargo sqlx prepare -- --bin investment_tracker && APP_ENV=local cargo build",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "cargo build:dev",
+      "type": "shell",
+      "command": "APP_ENV=dev cargo sqlx prepare -- --bin investment_tracker && APP_ENV=dev cargo build",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "cargo build:prod",
+      "type": "shell",
+      "command": "APP_ENV=prod cargo sqlx prepare -- --bin investment_tracker && APP_ENV=prod cargo build",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cargo Watch",
+      "type": "shell",
+      "command": "cargo watch -x run",
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "isBackground": false,
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}
