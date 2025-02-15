@@ -1,5 +1,10 @@
-target/
+/target
 Dockerfile
+.dockerignore
 .git
 .gitignore
 README.md
+.env
+.env.*
+/docs
+*.md

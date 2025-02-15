@@ -1,60 +1,67 @@
-use crate::config::get_settings;
 use crate::{
-    config::Settings,
     db::Database,
     layers::{create_cors, create_trace},
     logger::init_logger,
 };
 use axum::{routing::get, Router};
+use dotenv::dotenv;
+use env_config::models::{
+    app_config::{self, AppConfig},
+    app_env::{AppEnv, Env},
+    app_setting::{self, AppSettings},
+};
 
-use gen::tinkoff_public_invest_api_contract_v1::{InstrumentStatus, InstrumentsRequest};
-use services::TinkoffClient;
 use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::{net::SocketAddr, sync::Arc};
 use tokio::{net::TcpListener, sync::Mutex};
+use tracing::debug;
 
 mod api;
-mod config;
 mod db;
 mod enums;
+mod env_config;
 
-mod gen;
 mod layers;
 mod logger;
 mod middleware;
-mod services;
+
 mod utils;
 
 /// Initialize application settings and logger
-async fn initialize() -> Settings {
-    // Создаем обычные настройки
-    let settings = get_settings()
-        .expect("Failed to initialize settings - application cannot start without configuration");
+async fn initialize() -> AppSettings {
+    let app_env = AppEnv::new();
+    let app_config = AppConfig::new(&app_env.env);
+
+    let app_settings = AppSettings {
+        app_config,
+        app_env: app_env.clone(),
+    };
 
     // Initialize logger with settings
-    init_logger(&settings.log.level, &settings.log.format).expect("Failed to initialize logger");
+    init_logger(
+        &app_settings.app_config.log.level,
+        &app_settings.app_config.log.format,
+    )
+    .expect("Failed to initialize logger");
 
     // Log startup information
     tracing::info!("Starting application...");
-    tracing::info!("Current environment: {}", settings.environment().as_str());
+    tracing::info!("Current environment: {}", app_env.env.to_string());
 
-    if settings.is_dev() {
+    if Env::is_dev(&app_env.env) {
         // Additional debug logging only in development
         tracing::debug!("Debug logging enabled");
         tracing::info!("Development mode active");
     }
 
-    settings
+    app_settings
 }
 
 /// Setup database connection
-async fn setup_database(settings: &Settings) -> Database {
-    tracing::info!("Initializing database connection...");
-    let db = Database::connect(settings)
-        .await
-        .expect("Failed to connect to database - application cannot function without database");
-    tracing::info!("Database connection established");
+async fn setup_database(settings: &AppSettings) -> Database {
+    let db = Database::connect(settings).await;
+
     db
 }
 
@@ -85,13 +92,18 @@ async fn run_server(app: Router, addr: SocketAddr) {
 
 #[tokio::main]
 async fn main() {
+    // Загружаем .env файл в самом начале
+    dotenv().ok();
     // Initialize application
     let settings = Arc::new(initialize().await);
-
+    debug!("{:?}", settings);
     // Parse addresses
-    let http_addr: SocketAddr = format!("{}:{}", settings.server.address, settings.server.port)
-        .parse()
-        .expect("Invalid server address configuration - cannot start server");
+    let http_addr: SocketAddr = format!(
+        "{}:{}",
+        settings.app_config.server.address, settings.app_config.server.port,
+    )
+    .parse()
+    .expect("Invalid server address configuration - cannot start server");
 
     let db = setup_database(&settings).await;
     let db_pool = Arc::new(db.pool);
@@ -104,15 +116,15 @@ async fn main() {
         pool: (*db_pool).clone(),
     });
 
-    let mut tinkoffApiClient = TinkoffClient::new(settings)
-        .await
-        .expect("Failed to initialize Tinkoff client - cannot proceed without API access");
+    // let mut tinkoffApiClient = TinkoffClient::new(settings)
+    //     .await
+    //     .expect("Failed to initialize Tinkoff client - cannot proceed without API access");
 
-    let a = tinkoffApiClient.create_request(InstrumentsRequest {
-        instrument_status: InstrumentStatus::Base as i32,
-    });
+    // let a = tinkoffApiClient.create_request(InstrumentsRequest {
+    //     instrument_status: InstrumentStatus::Base as i32,
+    // });
 
-    println!("{:?}", a);
+    // println!("{:?}", a);
 
     // let shares = tinkoffApiClient.get_shares().await.unwrap();
     // pub async fn get_shares(&mut self) -> Result<SharesResponse>  {

@@ -10,7 +10,7 @@
       "cwd": "${workspaceFolder}",
       "sourceLanguages": ["rust"],
       "preLaunchTask": "cargo build:${input:env}",
-      "envFile": "${workspaceFolder}/.env",
+      "envFile": "${workspaceFolder}/.env.${input:env}",
       "console": "integratedTerminal"
     }
   ],
