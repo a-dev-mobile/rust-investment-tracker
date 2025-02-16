@@ -1,3 +1,12 @@
+
+#  создавать теги следующим образом:
+# make tag TAG=v1.0.0
+
+# Для development релиза
+# make tag-dev TAG=dev-v1.0.0
+
+
+
 # Определение окружения (по умолчанию local)
 ENV ?= local
 
@@ -25,7 +34,7 @@ VERSION := $(shell $(GIT) rev-parse --short HEAD)
 # Имя образа
 IMAGE_NAME := investment_tracker
 
-.PHONY: all init clean test build help docker-* print-env use-env
+.PHONY: all init clean test build help docker-* print-env use-env tag tag-dev
 
 # Помощь по командам
 help:
@@ -40,10 +49,41 @@ help:
 	@echo "  make docker-run    - Запуск контейнера"
 	@echo "  make docker-clean  - Очистка Docker ресурсов"
 	@echo "  make docker-restart- Быстрый перезапуск контейнера"
+	@echo "  make tag TAG=x.y.z - Создать и отправить production тег"
+	@echo "  make tag-dev TAG=dev-vx.y.z - Создать и отправить dev тег"
 	@echo "Окружения:"
 	@echo "  make use-env ENV=dev   - Использовать dev окружение"
 	@echo "  make use-env ENV=local - Использовать local окружение"
 	@echo "  make use-env ENV=prod  - Использовать prod окружение"
+tag:
+	@if [ -z "$(TAG)" ]; then \
+		echo "Ошибка: укажите переменную TAG, например: make tag TAG=v1.0.0"; \
+		exit 1; \
+	fi
+	@if [[ "$(TAG)" != v* ]]; then \
+		echo "Ошибка: TAG должен начинаться с 'v' (например v1.0.0)"; \
+		exit 1; \
+	fi
+	@echo "Создание production тега $(TAG)..."
+	@git tag -a $(TAG) -m "Release $(TAG)"
+	@git push origin $(TAG)
+	@echo "Тег $(TAG) успешно создан и отправлен"
+
+# Создание dev-тега и отправка его в удалённый репозиторий
+tag-dev:
+	@if [ -z "$(TAG)" ]; then \
+		echo "Ошибка: укажите переменную TAG, например: make tag-dev TAG=dev-v1.0.0"; \
+		exit 1; \
+	fi
+	@if [[ "$(TAG)" != dev-v* ]]; then \
+		echo "Ошибка: TAG должен начинаться с 'dev-v' (например dev-v1.0.0)"; \
+		exit 1; \
+	fi
+	@echo "Создание development тега $(TAG)..."
+	@git tag -a $(TAG) -m "Development release $(TAG)"
+	@git push origin $(TAG)
+	@echo "Тег $(TAG) успешно создан и отправлен"
+
 
 # Показать текущие переменные окружения
 print-env:
