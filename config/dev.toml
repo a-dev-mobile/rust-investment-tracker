@@ -19,3 +19,10 @@ domain = "invest-public-api.tinkoff.ru"
 [client_rest]
 timeout = 30   # seconds
 keepalive = 60 # seconds
+
+
+[share_updater]
+enabled = true
+interval_seconds = 60  # 1 minute for development
+max_retries = 3
+retry_delay_seconds = 5

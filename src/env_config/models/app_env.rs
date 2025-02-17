@@ -6,7 +6,8 @@ pub struct AppEnv {
     pub env: Env,
     pub database_url: String,
     pub tinkoff_token: String,
-    pub port: u16,
+    pub server_port: u16,
+    pub server_address: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Copy)]

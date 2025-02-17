@@ -2,11 +2,6 @@
 level = "debug,sqlx=debug"
 format = "text"            # Возможные значения: "json" или "text"
 
-[server]
-address = "127.0.0.1"
-port = 5000
-
-
 [database]
 max_connections = 5
 timeout_seconds = 10
@@ -19,3 +14,10 @@ domain = "invest-public-api.tinkoff.ru"
 [client_rest]
 timeout = 30   # seconds
 keepalive = 60 # seconds
+
+
+[share_updater]
+enabled = true
+interval_seconds = 60  # 1 minute for local development
+max_retries = 3
+retry_delay_seconds = 5

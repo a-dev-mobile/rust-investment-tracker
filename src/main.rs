@@ -10,7 +10,8 @@ use env_config::models::{
     app_env::{AppEnv, Env},
     app_setting::{self, AppSettings},
 };
-
+use sqlx::PgPool;
+use features::share_updater::{ShareUpdater};
 use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::{net::SocketAddr, sync::Arc};
@@ -21,6 +22,8 @@ mod api;
 mod db;
 mod enums;
 mod env_config;
+mod features;
+
 
 mod layers;
 mod logger;
@@ -77,6 +80,14 @@ fn create_app(db: Database) -> Router {
         .layer(create_trace())
 }
 
+// Usage in main.rs:
+pub async fn start_share_updater(db_pool: Arc<PgPool>, settings: Arc<AppSettings>) {
+    let updater = ShareUpdater::new(db_pool, settings);
+    tokio::spawn(async move {
+        updater.start_update_loop().await;
+    });
+}
+
 /// Start the HTTP server
 async fn run_server(app: Router, addr: SocketAddr) {
     tracing::info!("Starting server on {}", addr);
@@ -100,7 +111,7 @@ async fn main() {
     // Parse addresses
     let http_addr: SocketAddr = format!(
         "{}:{}",
-        settings.app_config.server.address, settings.app_config.server.port,
+        settings.app_env.server_address, settings.app_env.server_port,
     )
     .parse()
     .expect("Invalid server address configuration - cannot start server");
@@ -143,7 +154,7 @@ async fn main() {
     //     "{:?}",
     //     shares.instruments.first().unwrap().country_of_risk_name
     // );
-
+    start_share_updater(db_pool.clone(), settings.clone()).await;
     // Запуск сервера критичен, используем expect
     run_server(app, http_addr).await;
 }

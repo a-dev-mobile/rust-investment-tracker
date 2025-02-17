@@ -1,26 +1,26 @@
-
 use serde::Deserialize;
 use std::time::Duration;
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
     pub log: LogConfig,
-    pub server: ServerConfig,
     pub database: DatabaseConfig,
     pub tinkoff_api: TinkoffApiConfig,
     pub client_rest: ClientRestConfig,
+    pub share_updater: ShareUpdaterConfig,
+}
+#[derive(Debug, Deserialize)]
+pub struct ShareUpdaterConfig {
+    pub enabled: bool,
+    pub interval_seconds: u64,
+    pub max_retries: u32,
+    pub retry_delay_seconds: u64,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct LogConfig {
     pub level: String,
     pub format: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ServerConfig {
-    pub address: String,
-    pub port: u16,
 }
 
 #[derive(Debug, Deserialize)]

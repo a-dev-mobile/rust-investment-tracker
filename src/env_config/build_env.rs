@@ -5,13 +5,15 @@ use std::str::FromStr;
 impl AppEnv {
     pub fn new() -> AppEnv {
         let env = get_env_var("ENV");
-        let port = get_env_var("PORT");
+        let server_port = get_env_var("SERVER_PORT");
+        let server_address = get_env_var("SERVER_ADDRESS");
         let database_url = get_env_var("DATABASE_URL");
         let tinkoff_token = get_env_var("TINKOFF_TOKEN");
 
         AppEnv {
             env: Env::from_str(&env).expect("Unknown environment"),
-            port: port.parse().expect("PORT must be a number"),
+            server_port: server_port.parse().expect("PORT must be a number"),
+            server_address: server_address,
             database_url,
             tinkoff_token,
         }
