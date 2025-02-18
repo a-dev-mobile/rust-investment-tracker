@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT instrument_services.update_shares($1) as affected_rows",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "affected_rows",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "5a1cb7da7753dc03cf153be7fd94cb1e500dd945c1d668f73ebcf3a9904f7176"
+}

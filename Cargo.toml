@@ -8,7 +8,7 @@ build = "build.rs"
 [dependencies]
 tonic = { version = "0.12.3", features =  ["tls", "transport","tls-webpki-roots"] }
 prost = "0.13.5"
-prost-types = "0.13.4"
+prost-types = "0.13.5"
 rust_decimal = "1.36.0"
 toml = "0.8.20"
 dotenv = "0.15"
@@ -21,7 +21,7 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["fmt", "env-filter", "json"] }
 sqlx = { version = "0.8.3", features = ["postgres", "runtime-tokio-native-tls", "macros", "time", "uuid", ] }
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
-
+chrono = { version = "0.4.39", features = ["serde"] }
 
 uuid = { version = "1.13.1", features = ["serde", "v4"] }
 headers = "0.4.0"
@@ -30,10 +30,12 @@ regex = "1.11.1"
 reqwest = { version = "0.12.12", features = ["json"] }
 time = { version = "0.3.37", features = ["serde", "formatting", "parsing"] }
 rustls-native-certs = "0.8.1"
-rustls = { version = "0.23.22", features = ["ring"] }
+
+rustls = { version = "0.23.23", features = ["ring"] }
 
 webpki-roots = "0.26.8"
-
+num-derive = "0.4.2"
+num-traits = "0.2.19"
 
 [dev-dependencies]
 reqwest = "0.12.12"

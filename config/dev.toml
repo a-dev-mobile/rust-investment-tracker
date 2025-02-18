@@ -2,11 +2,6 @@
 level = "debug,sqlx=debug"
 format = "text"            # Возможные значения: "json" или "text"
 
-[server]
-address = "0.0.0.0"
-port = 5000
-
-
 [database]
 max_connections = 5
 timeout_seconds = 10
@@ -15,14 +10,12 @@ pool_size = 2
 [tinkoff_api]
 base_url = "https://invest-public-api.tinkoff.ru:443"
 domain = "invest-public-api.tinkoff.ru"
-
-[client_rest]
 timeout = 30   # seconds
 keepalive = 60 # seconds
 
 
 [share_updater]
 enabled = true
-interval_seconds = 60  # 1 minute for development
+interval_seconds = 60  # 1 minute for local development
 max_retries = 3
 retry_delay_seconds = 5
