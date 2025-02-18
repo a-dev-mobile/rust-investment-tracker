@@ -25,7 +25,9 @@ mod env_config;
 mod features;
 
 
+mod services;
 mod layers;
+mod gen;
 mod logger;
 mod middleware;
 
@@ -82,7 +84,7 @@ fn create_app(db: Database) -> Router {
 
 // Usage in main.rs:
 pub async fn start_share_updater(db_pool: Arc<PgPool>, settings: Arc<AppSettings>) {
-    let updater = ShareUpdater::new(db_pool, settings);
+    let updater = ShareUpdater::new(db_pool, settings).await;
     tokio::spawn(async move {
         updater.start_update_loop().await;
     });

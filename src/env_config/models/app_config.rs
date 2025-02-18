@@ -6,7 +6,6 @@ pub struct AppConfig {
     pub log: LogConfig,
     pub database: DatabaseConfig,
     pub tinkoff_api: TinkoffApiConfig,
-    pub client_rest: ClientRestConfig,
     pub share_updater: ShareUpdaterConfig,
 }
 #[derive(Debug, Deserialize)]
@@ -34,20 +33,9 @@ pub struct DatabaseConfig {
 pub struct TinkoffApiConfig {
     pub base_url: String,
     pub domain: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ClientRestConfig {
     pub timeout: u64,
     pub keepalive: u64,
 }
 
-impl ClientRestConfig {
-    pub fn timeout(&self) -> Duration {
-        Duration::from_secs(self.timeout)
-    }
 
-    pub fn keepalive(&self) -> Duration {
-        Duration::from_secs(self.keepalive)
-    }
-}
+
