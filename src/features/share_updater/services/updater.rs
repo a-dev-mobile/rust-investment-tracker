@@ -88,20 +88,31 @@ impl ShareUpdater {
             info!("Share updater is disabled in configuration");
             return;
         }
-
+    
         info!(
-            "Starting share update loop with {} second interval",
-            self.settings.app_config.share_updater.interval_seconds
+            "Starting share update loop with {} second interval (timezone: {})",
+            self.settings.app_config.share_updater.interval_seconds,
+            self.settings.app_config.share_updater.timezone
         );
-
+    
         let mut interval = time::interval(Duration::from_secs(
             self.settings.app_config.share_updater.interval_seconds,
         ));
-
+    
         loop {
             interval.tick().await;
+            
+            if self.settings.app_config.share_updater.is_night_time() {
+                info!("Skipping update during night time ({}-{} {})", 
+                    self.settings.app_config.share_updater.night_start_time,
+                    self.settings.app_config.share_updater.night_end_time,
+                    self.settings.app_config.share_updater.timezone
+                );
+                continue;
+            }
+    
             info!("Fetching updated share data");
-
+    
             match self.update_shares().await {
                 Ok(_) => info!("Successfully updated shares data"),
                 Err(e) => error!("Failed to update shares: {}", e),

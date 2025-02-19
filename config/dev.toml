@@ -1,5 +1,5 @@
 [log]
-level = "debug,sqlx=debug"
+level = "info,sqlx=info"
 format = "text"            # Возможные значения: "json" или "text"
 
 [database]
@@ -16,6 +16,10 @@ keepalive = 60 # seconds
 
 [share_updater]
 enabled = true
-interval_seconds = 60  # 1 minute for local development
+interval_seconds = 60 
 max_retries = 3
 retry_delay_seconds = 5
+night_updates_disabled = true
+night_start_time = "23:59"
+night_end_time = "07:00"
+timezone = "Europe/Moscow"

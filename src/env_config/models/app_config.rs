@@ -1,5 +1,6 @@
+use chrono::{NaiveTime, Utc};
+use chrono_tz::Tz;
 use serde::Deserialize;
-use std::time::Duration;
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
@@ -14,6 +15,10 @@ pub struct ShareUpdaterConfig {
     pub interval_seconds: u64,
     pub max_retries: u32,
     pub retry_delay_seconds: u64,
+    pub night_updates_disabled: bool,
+    pub night_start_time: String,
+    pub night_end_time: String,
+    pub timezone: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -37,5 +42,28 @@ pub struct TinkoffApiConfig {
     pub keepalive: u64,
 }
 
+impl ShareUpdaterConfig {
+    pub fn is_night_time(&self) -> bool {
+        if !self.night_updates_disabled {
+            return false;
+        }
 
+        // Парсим временную зону
+        let timezone: Tz = self.timezone.parse().expect("Invalid timezone");
 
+        // Получаем текущее время в UTC и конвертируем его в московское время
+        let moscow_time = Utc::now().with_timezone(&timezone).time();
+
+        let start_time = NaiveTime::parse_from_str(&self.night_start_time, "%H:%M")
+            .expect("Invalid night_start_time format");
+        let end_time = NaiveTime::parse_from_str(&self.night_end_time, "%H:%M")
+            .expect("Invalid night_end_time format");
+
+        if start_time <= end_time {
+            moscow_time >= start_time && moscow_time <= end_time
+        } else {
+            // Обработка случая, когда ночной период пересекает полночь
+            moscow_time >= start_time || moscow_time <= end_time
+        }
+    }
+}
