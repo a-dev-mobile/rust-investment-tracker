@@ -13,17 +13,14 @@ use tokio::time;
 use tracing::{error, info};
 
 pub struct ShareUpdater {
-    client: TinkoffClient,
+    client: Arc<TinkoffClient>,
     db_pool: Arc<PgPool>,
     settings: Arc<AppSettings>,
 }
 
 
 impl ShareUpdater {
-    pub async fn new(db_pool: Arc<PgPool>, settings: Arc<AppSettings>) -> Self {
-        let client = TinkoffClient::new(settings.clone())
-            .await
-            .expect("Failed to initialize Tinkoff client - cannot proceed without API access");
+    pub async fn new(db_pool: Arc<PgPool>, settings: Arc<AppSettings>,    client: Arc<TinkoffClient>) -> Self {
 
         ShareUpdater {
             client,
@@ -63,12 +60,6 @@ impl ShareUpdater {
     
         // Создаем JSON массив для передачи в функцию PostgreSQL
         let shares_json = json!(shares);
-    
-        // // Debug logging
-        // tracing::debug!("Shares JSON sample (first item): {}", 
-        //     serde_json::to_string_pretty(&shares.first())
-        //         .unwrap_or_else(|_| "Failed to serialize".to_string())
-        // );
     
         // Вызываем функцию обновления
         let result = sqlx::query!(

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use num_derive::FromPrimitive;
-use num_traits::FromPrimitive;
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShareQuotation {

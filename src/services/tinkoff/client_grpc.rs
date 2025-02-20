@@ -1,25 +1,26 @@
 use crate::env_config::models::app_setting::AppSettings;
+use crate::gen::tinkoff_public_invest_api_contract_v1::market_data_stream_service_client::MarketDataStreamServiceClient;
 use crate::gen::tinkoff_public_invest_api_contract_v1::{
     instruments_service_client::InstrumentsServiceClient,
     market_data_service_client::MarketDataServiceClient,
     operations_service_client::OperationsServiceClient, users_service_client::UsersServiceClient,
-    BondsResponse, InstrumentStatus, InstrumentsRequest, SharesResponse,
+ 
 };
 use rustls::crypto::aws_lc_rs;
-use std::io::Error;
-use std::io::ErrorKind;
+
 use std::io::Result;
 use std::{sync::Arc, time::Duration};
 use tonic::{
     metadata::MetadataValue,
     transport::{Channel, ClientTlsConfig},
-    Request, Status,
+    Request, 
 };
 
 #[derive(Clone)]
 pub struct TinkoffClient {
     pub instruments: InstrumentsServiceClient<Channel>,
     pub market_data: MarketDataServiceClient<Channel>,
+    pub market_data_stream: MarketDataStreamServiceClient<Channel>,
     pub operations: OperationsServiceClient<Channel>,
     pub users: UsersServiceClient<Channel>,
     pub token: String,
@@ -51,6 +52,7 @@ impl TinkoffClient {
         Ok(Self {
             instruments: InstrumentsServiceClient::new(channel.clone()),
             market_data: MarketDataServiceClient::new(channel.clone()),
+            market_data_stream: MarketDataStreamServiceClient::new(channel.clone()),
             operations: OperationsServiceClient::new(channel.clone()),
             users: UsersServiceClient::new(channel.clone()),
             token: settings.app_env.tinkoff_token.clone(),

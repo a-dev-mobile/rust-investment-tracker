@@ -6,16 +6,19 @@ use crate::{
 use axum::{routing::get, Router};
 use dotenv::dotenv;
 use env_config::models::{
-    app_config::{self, AppConfig},
+    app_config::AppConfig,
     app_env::{AppEnv, Env},
-    app_setting::{self, AppSettings},
+    app_setting::AppSettings,
 };
+
+use features::candles_updater::CandlesUpdater;
+use features::share_updater::ShareUpdater;
+use features::stream::MarketDataStreamer;
+use services::tinkoff::client_grpc::TinkoffClient;
 use sqlx::PgPool;
-use features::share_updater::{ShareUpdater};
-use std::io::Result;
-use std::io::{Error, ErrorKind};
+
 use std::{net::SocketAddr, sync::Arc};
-use tokio::{net::TcpListener, sync::Mutex};
+use tokio::net::TcpListener;
 use tracing::debug;
 
 mod api;
@@ -24,12 +27,11 @@ mod enums;
 mod env_config;
 mod features;
 
-
-mod services;
-mod layers;
 mod gen;
+mod layers;
 mod logger;
 mod middleware;
+mod services;
 
 mod utils;
 
@@ -83,13 +85,32 @@ fn create_app(db: Database) -> Router {
 }
 
 // Usage in main.rs:
-pub async fn start_share_updater(db_pool: Arc<PgPool>, settings: Arc<AppSettings>) {
-    let updater = ShareUpdater::new(db_pool, settings).await;
+pub async fn start_share_updater(
+    db_pool: Arc<PgPool>,
+    settings: Arc<AppSettings>,
+    client: Arc<TinkoffClient>,
+) {
+    let updater = ShareUpdater::new(db_pool, settings, client).await;
     tokio::spawn(async move {
         updater.start_update_loop().await;
     });
 }
-
+pub async fn start_market_streamer(settings: Arc<AppSettings>, client: Arc<TinkoffClient>) {
+    let streamer = MarketDataStreamer::new(settings, client);
+    tokio::spawn(async move {
+        streamer.start_streaming().await;
+    });
+}
+pub async fn start_candles_updater(
+    db_pool: Arc<PgPool>,
+    settings: Arc<AppSettings>,
+    client: Arc<TinkoffClient>,
+) {
+    let updater = CandlesUpdater::new(db_pool, settings, client).await;
+    tokio::spawn(async move {
+        updater.start_update_loop().await;
+    });
+}
 /// Start the HTTP server
 async fn run_server(app: Router, addr: SocketAddr) {
     tracing::info!("Starting server on {}", addr);
@@ -121,42 +142,20 @@ async fn main() {
     let db = setup_database(&settings).await;
     let db_pool = Arc::new(db.pool);
 
-    // Start candles updater
-    // candles_updater::start_candles_updater(db_pool.clone(), settings.clone()).await;
-
-    // Create app with database connection
+    
     let app = create_app(Database {
         pool: (*db_pool).clone(),
     });
 
-    // let mut tinkoffApiClient = TinkoffClient::new(settings)
-    //     .await
-    //     .expect("Failed to initialize Tinkoff client - cannot proceed without API access");
 
-    // let a = tinkoffApiClient.create_request(InstrumentsRequest {
-    //     instrument_status: InstrumentStatus::Base as i32,
-    // });
+    let tinkoff_client = Arc::new(
+        TinkoffClient::new(settings.clone())
+            .await
+            .expect("Failed to initialize Tinkoff client"),
+    );
+    start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
+    start_share_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
+    start_market_streamer(settings.clone(), tinkoff_client.clone()).await;
 
-    // println!("{:?}", a);
-
-    // let shares = tinkoffApiClient.get_shares().await.unwrap();
-    // pub async fn get_shares(&mut self) -> Result<SharesResponse>  {
-    //     let request = self.create_request(InstrumentsRequest {
-    //         instrument_status: InstrumentStatus::All as i32,
-    //     }).expect("Failed to create request");
-
-    //     self.instruments
-    //         .shares(request)
-    //         .await
-    //         .map(|response| response.into_inner())
-    //         .map_err(|e| AppError::ExternalServiceError(format!("Failed to get shares: {}", e)))
-    // }
-
-    // println!(
-    //     "{:?}",
-    //     shares.instruments.first().unwrap().country_of_risk_name
-    // );
-    start_share_updater(db_pool.clone(), settings.clone()).await;
-    // Запуск сервера критичен, используем expect
     run_server(app, http_addr).await;
 }

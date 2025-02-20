@@ -36,6 +36,9 @@ rustls = { version = "0.23.23", features = ["ring"] }
 webpki-roots = "0.26.8"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
+tokio-stream = "0.1.17"
+
+futures = "0.3.31"
 
 [dev-dependencies]
 reqwest = "0.12.12"
