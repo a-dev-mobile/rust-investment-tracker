@@ -153,7 +153,7 @@ async fn main() {
             .await
             .expect("Failed to initialize Tinkoff client"),
     );
-    start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
+    // start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
     start_share_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
     start_market_streamer(settings.clone(), tinkoff_client.clone()).await;
 

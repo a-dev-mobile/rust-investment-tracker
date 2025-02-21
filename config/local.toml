@@ -15,8 +15,8 @@ keepalive = 60 # seconds
 
 
 [share_updater]
-enabled = false
-interval_seconds = 60  # 1 minute for local development
+enabled = true
+interval_seconds = 10  # 1 minute for local development
 max_retries = 3
 retry_delay_seconds = 5
 night_updates_disabled = true

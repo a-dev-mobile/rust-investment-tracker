@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS update_watched_instruments_timestamp ON instrument_services.watched_instruments;
