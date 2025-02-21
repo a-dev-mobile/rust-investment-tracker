@@ -1,6 +1,6 @@
 use crate::{
     env_config::models::app_setting::AppSettings,
-    features::share_updater::models::Share,
+    features::share_updater::models::MyShare,
     gen::tinkoff_public_invest_api_contract_v1::{
         InstrumentStatus, InstrumentsRequest, SharesResponse,
     },
@@ -94,10 +94,10 @@ impl ShareUpdater {
         let shares_response = self.fetch_shares().await;
 
         // Преобразуем gRPC модели в Serde модели
-        let shares: Vec<Share> = shares_response
+        let shares: Vec<MyShare> = shares_response
             .instruments
             .into_iter()
-            .map(Share::from)
+            .map(MyShare::from)
             .collect();
 
         // Создаем JSON массив для передачи в функцию PostgreSQL

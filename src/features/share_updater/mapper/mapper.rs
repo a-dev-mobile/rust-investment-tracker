@@ -1,24 +1,27 @@
-
-use crate::features::share_updater::models::{Share, ShareQuotation, ShareMoneyValue, ShareType, SecurityTradingStatus, RealExchange};
-use crate::gen::tinkoff_public_invest_api_contract_v1::{Share as GrpcShare, Quotation, MoneyValue};
-use num_traits::FromPrimitive;
+use crate::features::core::models::money_value::MyMoneyValue;
+use crate::features::core::models::quotation::MyQuotation;
+use crate::features::share_updater::models::{
+    MyShare, RealExchange, SecurityTradingStatus, ShareType,
+};
+use crate::gen::tinkoff_public_invest_api_contract_v1::{
+    MoneyValue as TinkoffMoneyValue, Quotation as TinkoffQuotation, Share as TinkoffShare,
+};
 use chrono::{DateTime, Utc};
+use num_traits::FromPrimitive;
 use prost_types::Timestamp;
 
-
-
-impl From<Quotation> for ShareQuotation {
-    fn from(q: Quotation) -> Self {
-        ShareQuotation {
+impl From<TinkoffQuotation> for MyQuotation {
+    fn from(q: TinkoffQuotation) -> Self {
+        MyQuotation {
             units: q.units,
             nano: q.nano,
         }
     }
 }
 
-impl From<MoneyValue> for ShareMoneyValue {
-    fn from(m: MoneyValue) -> Self {
-        ShareMoneyValue {
+impl From<TinkoffMoneyValue> for MyMoneyValue {
+    fn from(m: TinkoffMoneyValue) -> Self {
+        MyMoneyValue {
             currency: m.currency,
             units: m.units,
             nano: m.nano,
@@ -44,9 +47,9 @@ impl From<i32> for RealExchange {
     }
 }
 
-impl From<GrpcShare> for Share {
-    fn from(s: GrpcShare) -> Self {
-        Share {
+impl From<TinkoffShare> for MyShare {
+    fn from(s: TinkoffShare) -> Self {
+        MyShare {
             figi: s.figi,
             ticker: s.ticker,
             class_code: s.class_code,

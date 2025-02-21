@@ -1,20 +1,8 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use num_derive::FromPrimitive;
+use serde::{Deserialize, Serialize};
 
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ShareQuotation {
-    pub units: i64,
-    pub nano: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ShareMoneyValue {
-    pub currency: String,
-    pub units: i64,
-    pub nano: i32,
-}
+use crate::features::core::models::{money_value::MyMoneyValue, quotation::MyQuotation};
 
 #[derive(Debug, Serialize, Deserialize, FromPrimitive)]
 pub enum ShareType {
@@ -89,19 +77,19 @@ pub enum RealExchange {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Share {
+pub struct MyShare {
     pub figi: String,
     pub ticker: String,
     pub class_code: String,
     pub isin: String,
     pub lot: i32,
     pub currency: String,
-    pub klong: Option<ShareQuotation>,
-    pub kshort: Option<ShareQuotation>,
-    pub dlong: Option<ShareQuotation>,
-    pub dshort: Option<ShareQuotation>,
-    pub dlong_min: Option<ShareQuotation>,
-    pub dshort_min: Option<ShareQuotation>,
+    pub klong: Option<MyQuotation>,
+    pub kshort: Option<MyQuotation>,
+    pub dlong: Option<MyQuotation>,
+    pub dshort: Option<MyQuotation>,
+    pub dlong_min: Option<MyQuotation>,
+    pub dshort_min: Option<MyQuotation>,
     pub short_enabled_flag: bool,
     pub name: String,
     pub exchange: String,
@@ -111,14 +99,14 @@ pub struct Share {
     pub country_of_risk_name: String,
     pub sector: String,
     pub issue_size_plan: i64,
-    pub nominal: Option<ShareMoneyValue>,
+    pub nominal: Option<MyMoneyValue>,
     pub trading_status: SecurityTradingStatus,
     pub otc_flag: bool,
     pub buy_available_flag: bool,
     pub sell_available_flag: bool,
     pub div_yield_flag: bool,
     pub share_type: ShareType,
-    pub min_price_increment: Option<ShareQuotation>,
+    pub min_price_increment: Option<MyQuotation>,
     pub api_trade_available_flag: bool,
     pub uid: String,
     pub real_exchange: RealExchange,

@@ -1,14 +1,24 @@
+use chrono::{TimeZone, Utc};
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{metadata::MetadataValue, Request};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 // use futures::Stream;
 use crate::{
-    env_config::models::app_setting::AppSettings, features::stream::models::watched_instrument::WatchedInstrument, gen::tinkoff_public_invest_api_contract_v1::{
-        market_data_request, market_data_response, CandleInstrument, InfoInstrument, MarketDataRequest, MarketDataResponse, OrderBookInstrument, SubscribeCandlesRequest, SubscribeInfoRequest, SubscribeOrderBookRequest, SubscribeTradesRequest, TradeInstrument
-    }, services::tinkoff::client_grpc::TinkoffClient
+    env_config::models::app_setting::AppSettings,
+    features::{
+        core::models::candle_interval::MyCandleInterval,
+        stream::models::{candle::MyCandle, watched_instrument::WatchedInstrument},
+    },
+    gen::tinkoff_public_invest_api_contract_v1::{
+        market_data_request, market_data_response, Candle, CandleInstrument, InfoInstrument,
+        MarketDataRequest, MarketDataResponse, OrderBookInstrument, SubscribeCandlesRequest,
+        SubscribeCandlesResponse, SubscribeInfoRequest, SubscribeOrderBookRequest,
+        SubscribeTradesRequest, TradeInstrument,
+    },
+    services::tinkoff::client_grpc::TinkoffClient,
 };
 
 use super::repository::StreamRepository;
@@ -100,18 +110,19 @@ impl MarketDataStreamer {
     ) -> MarketDataRequest {
         // Group instruments by subscription interval
         let grouped_instruments: std::collections::HashMap<i32, Vec<&WatchedInstrument>> =
-            active_instruments
-                .iter()
-                .fold(std::collections::HashMap::new(), |mut acc, instrument| {
+            active_instruments.iter().fold(
+                std::collections::HashMap::new(),
+                |mut acc, instrument| {
                     acc.entry(instrument.subscription_interval_id)
                         .or_insert_with(Vec::new)
                         .push(instrument);
                     acc
-                });
+                },
+            );
 
         // Create candle instruments for each interval group
         let mut all_candle_instruments = Vec::new();
-        
+
         for (interval, instruments) in grouped_instruments {
             let mut candle_instruments: Vec<CandleInstrument> = instruments
                 .iter()
@@ -122,11 +133,14 @@ impl MarketDataStreamer {
                     figi: instrument.figi.clone(),
                 })
                 .collect();
-            
+
             all_candle_instruments.append(&mut candle_instruments);
         }
 
-        info!("Created subscription for {} instruments", all_candle_instruments.len());
+        info!(
+            "Created subscription for {} instruments",
+            all_candle_instruments.len()
+        );
 
         MarketDataRequest {
             payload: Some(market_data_request::Payload::SubscribeCandlesRequest(
@@ -141,22 +155,32 @@ impl MarketDataStreamer {
 
     fn handle_market_data_response(&self, response: MarketDataResponse) {
         match response.payload {
-            Some(payload) => {
-                match payload {
-                    market_data_response::Payload::SubscribeCandlesResponse(candles) => {
-                        info!("Received candles subscription response: {:?}", candles);
-                    }
-                    market_data_response::Payload::Candle(candle) => {
-                        info!("Received candle update: {:?}", candle);
-                    }
-                    _ => {
-                        info!("Received other market data: {:?}", payload);
-                    }
+            Some(payload) => match payload {
+                market_data_response::Payload::SubscribeCandlesResponse(candles) => {
+                    info!("Received candles subscription response: {:?}", candles);
                 }
-            }
+                market_data_response::Payload::Candle(candle) => {
+                    info!("Received candle update: {:?}", candle);
+                    self.handle_candle_update(candle);
+                }
+                _ => {
+                    info!("Received other market data: {:?}", payload);
+                }
+            },
             None => {
                 error!("Received empty market data response");
             }
         }
+    }
+
+    fn handle_candle_update(&self, candle: Candle) {
+        let runtime = tokio::runtime::Handle::current();
+        let repository = self.repository.clone();
+
+        runtime.spawn(async move {
+            // Преобразуем Candle в MyCandle
+            let my_candle = MyCandle::from(candle);
+            repository.save_candle(my_candle).await 
+        });
     }
 }

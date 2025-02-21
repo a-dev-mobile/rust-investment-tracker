@@ -11,7 +11,7 @@ use env_config::models::{
     app_setting::AppSettings,
 };
 
-use features::candles_updater::CandlesUpdater;
+
 use features::share_updater::ShareUpdater;
 use features::stream::MarketDataStreamer;
 use services::tinkoff::client_grpc::TinkoffClient;
@@ -105,16 +105,7 @@ pub async fn start_market_streamer(
         streamer.start_streaming().await;
     });
 }
-pub async fn start_candles_updater(
-    db_pool: Arc<PgPool>,
-    settings: Arc<AppSettings>,
-    client: Arc<TinkoffClient>,
-) {
-    let updater = CandlesUpdater::new(db_pool, settings, client).await;
-    tokio::spawn(async move {
-        updater.start_update_loop().await;
-    });
-}
+
 /// Start the HTTP server
 async fn run_server(app: Router, addr: SocketAddr) {
     tracing::info!("Starting server on {}", addr);

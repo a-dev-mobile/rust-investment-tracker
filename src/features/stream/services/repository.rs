@@ -1,10 +1,12 @@
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sqlx::PgPool;
-use std::sync::Arc;
+use std::{result, sync::Arc};
 use tracing::{debug, error, info};
 
-use crate::features::stream::models::watched_instrument::WatchedInstrument;
-
+use crate::features::stream::models::{candle::MyCandle, watched_instrument::WatchedInstrument};
+#[derive(Clone)]
 pub struct StreamRepository {
     db_pool: Arc<PgPool>,
 }
@@ -37,6 +39,20 @@ WHERE is_active = true
                 error!("Failed to fetch active watched instruments: {}", e);
                 return vec![];
             }
+        }
+    }
+
+    pub async fn save_candle(&self, candle: MyCandle)  {
+        let candles_json = json!([candle]); // Сразу сериализуем MyCandle в JSON
+
+        match sqlx::query!(
+            "SELECT instrument_services.update_candles($1) as affected_rows",
+            &candles_json
+        )
+        .fetch_one(&*self.db_pool)
+        .await {
+            Ok(result) => debug!("Successfully saved candle, affected rows: {:?}", result.affected_rows),
+            Err(e) => error!("Failed to save candle: {}", e),
         }
     }
 }
