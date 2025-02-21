@@ -95,8 +95,12 @@ pub async fn start_share_updater(
         updater.start_update_loop().await;
     });
 }
-pub async fn start_market_streamer(settings: Arc<AppSettings>, client: Arc<TinkoffClient>) {
-    let streamer = MarketDataStreamer::new(settings, client);
+pub async fn start_market_streamer(
+    db_pool: Arc<PgPool>,
+    settings: Arc<AppSettings>,
+    client: Arc<TinkoffClient>,
+) {
+    let streamer = MarketDataStreamer::new(db_pool, settings, client);
     tokio::spawn(async move {
         streamer.start_streaming().await;
     });
@@ -142,11 +146,9 @@ async fn main() {
     let db = setup_database(&settings).await;
     let db_pool = Arc::new(db.pool);
 
-    
     let app = create_app(Database {
         pool: (*db_pool).clone(),
     });
-
 
     let tinkoff_client = Arc::new(
         TinkoffClient::new(settings.clone())
@@ -155,7 +157,7 @@ async fn main() {
     );
     // start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
     start_share_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
-    start_market_streamer(settings.clone(), tinkoff_client.clone()).await;
+    start_market_streamer(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
 
     run_server(app, http_addr).await;
 }

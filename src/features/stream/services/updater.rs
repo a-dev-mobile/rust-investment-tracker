@@ -1,3 +1,4 @@
+use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
@@ -5,105 +6,65 @@ use tonic::{metadata::MetadataValue, Request};
 use tracing::{error, info};
 // use futures::Stream;
 use crate::{
-    env_config::models::app_setting::AppSettings,
-    gen::tinkoff_public_invest_api_contract_v1::{
-        market_data_request, CandleInstrument, InfoInstrument, MarketDataRequest,
-        MarketDataResponse, OrderBookInstrument, SubscribeCandlesRequest, SubscribeInfoRequest,
-        SubscribeOrderBookRequest, SubscribeTradesRequest, TradeInstrument,
-    },
-    services::tinkoff::client_grpc::TinkoffClient,
+    env_config::models::app_setting::AppSettings, features::stream::models::watched_instrument::WatchedInstrument, gen::tinkoff_public_invest_api_contract_v1::{
+        market_data_request, market_data_response, CandleInstrument, InfoInstrument, MarketDataRequest, MarketDataResponse, OrderBookInstrument, SubscribeCandlesRequest, SubscribeInfoRequest, SubscribeOrderBookRequest, SubscribeTradesRequest, TradeInstrument
+    }, services::tinkoff::client_grpc::TinkoffClient
 };
 
+use super::repository::StreamRepository;
+
 pub struct MarketDataStreamer {
+    db_pool: Arc<PgPool>,
     client: Arc<TinkoffClient>,
     settings: Arc<AppSettings>,
+    repository: StreamRepository,
 }
 
 impl MarketDataStreamer {
-    pub fn new(settings: Arc<AppSettings>, client: Arc<TinkoffClient>) -> Self {
-        Self { client, settings }
+    pub fn new(
+        db_pool: Arc<PgPool>,
+        settings: Arc<AppSettings>,
+        client: Arc<TinkoffClient>,
+    ) -> Self {
+        let repository = StreamRepository::new(db_pool.clone());
+
+        Self {
+            db_pool,
+            client,
+            settings,
+            repository,
+        }
     }
 
     pub async fn start_streaming(self) {
         info!("Starting market data stream...");
+        if !self.settings.app_config.stream_updater.enabled {
+            info!("streaming is disabled in configuration");
+            return;
+        }
+        info!(
+            "Starting stream - timezone: {})",
+            self.settings.app_config.stream_updater.timezone
+        );
 
-        let candle_instrument = CandleInstrument {
-            instrument_id: "BBG004730N88".to_string(),
-            interval: 1, // SUBSCRIPTION_INTERVAL_ONE_MINUTE
-            #[allow(deprecated)]
-            figi: "BBG004730N88".to_string(),
-        };
+        let active_instruments = self.repository.get_active_instruments().await;
 
-        let subscribe_candles = SubscribeCandlesRequest {
-            subscription_action: 1, // SUBSCRIPTION_ACTION_SUBSCRIBE
-            instruments: vec![candle_instrument],
-            waiting_close: false,
-        };
+        if active_instruments.is_empty() {
+            info!("No active instruments found");
+            return;
+        }
 
-        let order_book_instrument = OrderBookInstrument {
-            figi: String::new(),
-            depth: 20,
-            instrument_id: "BBG004730N88".to_string(),
-        };
+        // Create subscription request for candles
+        let request = self.create_candles_subscription_request(&active_instruments);
 
-        let subscribe_order_book = SubscribeOrderBookRequest {
-            subscription_action: 1,
-            instruments: vec![order_book_instrument],
-        };
-
-        let trade_instrument = TradeInstrument {
-            figi: String::new(),
-            instrument_id: "BBG004730N88".to_string(),
-        };
-
-        let subscribe_trades = SubscribeTradesRequest {
-            subscription_action: 1,
-            instruments: vec![trade_instrument],
-        };
-
-        let info_instrument = InfoInstrument {
-            figi: String::new(),
-            instrument_id: "BBG004730N88".to_string(),
-        };
-
-        let subscribe_info = SubscribeInfoRequest {
-            subscription_action: 1,
-            instruments: vec![info_instrument],
-        };
-
-        // Создаем канал для стриминга запросов
-        let (tx, rx) = mpsc::channel(4); // Увеличиваем буфер для всех запросов
+        // Create channel for streaming request
+        let (tx, rx) = mpsc::channel(1);
         let request_stream = ReceiverStream::new(rx);
 
-        // Отправляем все запросы в канал
-        let requests = vec![
-            MarketDataRequest {
-                payload: Some(market_data_request::Payload::SubscribeCandlesRequest(
-                    subscribe_candles,
-                )),
-            },
-            MarketDataRequest {
-                payload: Some(market_data_request::Payload::SubscribeOrderBookRequest(
-                    subscribe_order_book,
-                )),
-            },
-            MarketDataRequest {
-                payload: Some(market_data_request::Payload::SubscribeTradesRequest(
-                    subscribe_trades,
-                )),
-            },
-            MarketDataRequest {
-                payload: Some(market_data_request::Payload::SubscribeInfoRequest(
-                    subscribe_info,
-                )),
-            },
-        ];
-
-        for request in requests {
-            if let Err(e) = tx.send(request).await {
-                error!("Failed to send request to stream: {}", e);
-                return;
-            }
+        // Send request to channel
+        if let Err(e) = tx.send(request).await {
+            error!("Failed to send request to stream: {}", e);
+            return;
         }
 
         // Create stream
@@ -115,9 +76,8 @@ impl MarketDataStreamer {
         request
             .metadata_mut()
             .insert("authorization", auth_header_value);
-        let response = client.market_data_stream(request).await;
 
-        match response {
+        match client.market_data_stream(request).await {
             Ok(streaming_response) => {
                 info!("Successfully connected to market data stream");
                 let mut stream = streaming_response.into_inner();
@@ -134,10 +94,65 @@ impl MarketDataStreamer {
         }
     }
 
+    fn create_candles_subscription_request(
+        &self,
+        active_instruments: &[WatchedInstrument],
+    ) -> MarketDataRequest {
+        // Group instruments by subscription interval
+        let grouped_instruments: std::collections::HashMap<i32, Vec<&WatchedInstrument>> =
+            active_instruments
+                .iter()
+                .fold(std::collections::HashMap::new(), |mut acc, instrument| {
+                    acc.entry(instrument.subscription_interval_id)
+                        .or_insert_with(Vec::new)
+                        .push(instrument);
+                    acc
+                });
+
+        // Create candle instruments for each interval group
+        let mut all_candle_instruments = Vec::new();
+        
+        for (interval, instruments) in grouped_instruments {
+            let mut candle_instruments: Vec<CandleInstrument> = instruments
+                .iter()
+                .map(|instrument| CandleInstrument {
+                    instrument_id: instrument.figi.clone(),
+                    interval: interval,
+                    #[allow(deprecated)]
+                    figi: instrument.figi.clone(),
+                })
+                .collect();
+            
+            all_candle_instruments.append(&mut candle_instruments);
+        }
+
+        info!("Created subscription for {} instruments", all_candle_instruments.len());
+
+        MarketDataRequest {
+            payload: Some(market_data_request::Payload::SubscribeCandlesRequest(
+                SubscribeCandlesRequest {
+                    subscription_action: 1, // SUBSCRIPTION_ACTION_SUBSCRIBE
+                    instruments: all_candle_instruments,
+                    waiting_close: false,
+                },
+            )),
+        }
+    }
+
     fn handle_market_data_response(&self, response: MarketDataResponse) {
         match response.payload {
             Some(payload) => {
-                info!("Received market data: {:?}", payload);
+                match payload {
+                    market_data_response::Payload::SubscribeCandlesResponse(candles) => {
+                        info!("Received candles subscription response: {:?}", candles);
+                    }
+                    market_data_response::Payload::Candle(candle) => {
+                        info!("Received candle update: {:?}", candle);
+                    }
+                    _ => {
+                        info!("Received other market data: {:?}", payload);
+                    }
+                }
             }
             None => {
                 error!("Received empty market data response");

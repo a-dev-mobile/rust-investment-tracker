@@ -1,4 +1,3 @@
--- Create table for watched instruments
 CREATE TABLE instrument_services.watched_instruments (
     -- Primary key
     id SERIAL PRIMARY KEY,
@@ -13,12 +12,12 @@ CREATE TABLE instrument_services.watched_instruments (
     last_updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Candle collection settings
-    candle_interval instrument_services.candle_interval NOT NULL,
+    subscription_interval_id INTEGER NOT NULL REFERENCES instrument_services.subscription_intervals(id),
     store_history_days INTEGER NOT NULL DEFAULT 30,
     
     -- Additional parameters
     notes TEXT,
     
     -- Create unique constraint using uid instead of figi
-    CONSTRAINT unique_instrument_interval UNIQUE (uid, candle_interval)
+    CONSTRAINT unique_instrument_interval UNIQUE (uid, subscription_interval_id)
 );

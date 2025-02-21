@@ -15,11 +15,20 @@ keepalive = 60 # seconds
 
 
 [share_updater]
-enabled = true
+enabled = false
 interval_seconds = 10  # 1 minute for local development
 max_retries = 3
 retry_delay_seconds = 5
 night_updates_disabled = true
 night_start_time = "23:59"
 night_end_time = "07:00"
+timezone = "Europe/Moscow"
+
+
+[stream_updater]
+enabled = true
+retry_attempts = 3
+retry_delay_seconds = 5
+trading_start_time = "07:00"
+trading_end_time = "23:59"
 timezone = "Europe/Moscow"
