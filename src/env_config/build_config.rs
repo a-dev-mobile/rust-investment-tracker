@@ -1,6 +1,6 @@
 // settings.rs
 use super::models::app_config::AppConfig;
-use super::models::app_env::{AppEnv, Env};
+use super::models::app_env::Env;
 use std::fs;
 use std::path::Path;
 use toml;

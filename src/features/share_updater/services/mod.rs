@@ -1,2 +1,2 @@
-pub mod updater;
+pub mod share_updater;
 

@@ -1,5 +1,5 @@
 use crate::{
-    db::Database,
+    db::{mongo_db::MongoDb, PostgresDb},
     layers::{create_cors, create_trace},
     logger::init_logger,
 };
@@ -11,9 +11,8 @@ use env_config::models::{
     app_setting::AppSettings,
 };
 
-
 use features::share_updater::ShareUpdater;
-use features::stream::MarketDataStreamer;
+
 use services::tinkoff::client_grpc::TinkoffClient;
 use sqlx::PgPool;
 
@@ -65,44 +64,38 @@ async fn initialize() -> AppSettings {
     app_settings
 }
 
-/// Setup database connection
-async fn setup_database(settings: &AppSettings) -> Database {
-    let db = Database::connect(settings).await;
+/// Setup database connections
+async fn setup_databases(settings: &AppSettings) -> (PostgresDb, MongoDb) {
+    // Connect to PostgreSQL
+    let postgres_db = PostgresDb::connect(settings).await;
 
-    db
+    // Connect to MongoDB
+    let mongo_db = MongoDb::connect(settings).await;
+
+    (postgres_db, mongo_db)
 }
 
 /// Create and configure the application router
-fn create_app(db: Database) -> Router {
+fn create_app(postgres_db: PostgresDb, mongo_db: MongoDb) -> Router {
     Router::new()
         .layer(create_cors())
         .route("/api-health", get(api::health_api))
         .route("/db-health", get(api::health_db))
-        // TODO: Add v1 routes
-        // .nest("/v1", routes::v1::router(db.pool.clone()))
-        .layer(axum::Extension(db.pool.clone()))
+        .layer(axum::Extension(postgres_db.clone()))
+        .layer(axum::Extension(mongo_db.clone()))
         .layer(create_trace())
 }
 
-// Usage in main.rs:
+/// Start the share updater background service
 pub async fn start_share_updater(
-    db_pool: Arc<PgPool>,
+    postgres_db: Arc<PgPool>,
+    mongo_db: Arc<MongoDb>,
     settings: Arc<AppSettings>,
     client: Arc<TinkoffClient>,
 ) {
-    let updater = ShareUpdater::new(db_pool, settings, client).await;
+    let updater = ShareUpdater::new(postgres_db, mongo_db, settings, client).await;
     tokio::spawn(async move {
         updater.start_update_loop().await;
-    });
-}
-pub async fn start_market_streamer(
-    db_pool: Arc<PgPool>,
-    settings: Arc<AppSettings>,
-    client: Arc<TinkoffClient>,
-) {
-    let streamer = MarketDataStreamer::new(db_pool, settings, client);
-    tokio::spawn(async move {
-        streamer.start_streaming().await;
     });
 }
 
@@ -121,12 +114,14 @@ async fn run_server(app: Router, addr: SocketAddr) {
 
 #[tokio::main]
 async fn main() {
-    // Загружаем .env файл в самом начале
+    // Load .env file at the beginning
     dotenv().ok();
+
     // Initialize application
     let settings = Arc::new(initialize().await);
     debug!("{:?}", settings);
-    // Parse addresses
+
+    // Parse server address
     let http_addr: SocketAddr = format!(
         "{}:{}",
         settings.app_env.server_address, settings.app_env.server_port,
@@ -134,21 +129,36 @@ async fn main() {
     .parse()
     .expect("Invalid server address configuration - cannot start server");
 
-    let db = setup_database(&settings).await;
-    let db_pool = Arc::new(db.pool);
+    // Setup databases
+    let (postgres_db, mongo_db) = setup_databases(&settings).await;
+    let db_pool = Arc::new(postgres_db.pool);
+    let mongodb_arc = Arc::new(mongo_db.clone());
 
-    let app = create_app(Database {
-        pool: (*db_pool).clone(),
-    });
+    // Create application router
+    let app = create_app(
+        PostgresDb {
+            pool: (*db_pool).clone(),
+        },
+        mongo_db,
+    );
 
+    // Initialize Tinkoff client
     let tinkoff_client = Arc::new(
         TinkoffClient::new(settings.clone())
             .await
             .expect("Failed to initialize Tinkoff client"),
     );
-    // start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
-    start_share_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
-    start_market_streamer(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
 
+    // Start background services
+    // start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
+    start_share_updater(
+        db_pool.clone(),
+        mongodb_arc.clone(),
+        settings.clone(),
+        tinkoff_client.clone(),
+    )
+    .await;
+
+    // Start HTTP server
     run_server(app, http_addr).await;
 }

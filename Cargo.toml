@@ -27,6 +27,11 @@ uuid = { version = "1.13.1", features = ["serde", "v4"] }
 headers = "0.4.0"
 regex = "1.11.1"
 
+# MongoDB dependencies
+mongodb = "3.2.1"
+bson = "2.13.0"
+futures = "0.3.31"
+
 reqwest = { version = "0.12.12", features = ["json"] }
 time = { version = "0.3.37", features = ["serde", "formatting", "parsing"] }
 rustls-native-certs = "0.8.1"
@@ -38,7 +43,7 @@ num-derive = "0.4.2"
 num-traits = "0.2.19"
 tokio-stream = "0.1.17"
 
-futures = "0.3.31"
+
 
 [dev-dependencies]
 reqwest = "0.12.12"

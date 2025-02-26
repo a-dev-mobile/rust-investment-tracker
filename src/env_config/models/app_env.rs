@@ -4,7 +4,8 @@ use std::str::FromStr;
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppEnv {
     pub env: Env,
-    pub database_url: String,
+    pub postgres_url: String,
+    pub mongo_url: String,
     pub tinkoff_token: String,
     pub server_port: u16,
     pub server_address: String,

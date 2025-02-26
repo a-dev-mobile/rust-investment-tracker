@@ -1,11 +1,18 @@
 [log]
-level = "info,sqlx=info"
+level = "debug,sqlx=debug"
 format = "text"            # Возможные значения: "json" или "text"
 
-[database]
+[postgres_db]
 max_connections = 5
 timeout_seconds = 10
 pool_size = 2
+
+[mongo_db]
+timeout_seconds = 10
+pool_size = 10             # MongoDB connections pool size
+retry_writes = true       
+write_concern = "majority" # Options: "majority", "1" (default), "2", etc.
+read_concern = "local"     # Options: "local", "majority", "available", "linearizable"
 
 [tinkoff_api]
 base_url = "https://invest-public-api.tinkoff.ru:443"
@@ -19,7 +26,14 @@ enabled = true
 interval_seconds = 60 
 max_retries = 3
 retry_delay_seconds = 5
-night_updates_disabled = true
-night_start_time = "23:59"
-night_end_time = "07:00"
+update_start_time = "00:49"
+update_end_time = "23:59"
+timezone = "Europe/Moscow"
+
+[stream_updater]
+enabled = true
+retry_attempts = 3
+retry_delay_seconds = 5
+trading_start_time = "07:00"
+trading_end_time = "23:59"
 timezone = "Europe/Moscow"

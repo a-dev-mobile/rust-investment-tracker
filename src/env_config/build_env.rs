@@ -7,14 +7,16 @@ impl AppEnv {
         let env = get_env_var("ENV");
         let server_port = get_env_var("SERVER_PORT");
         let server_address = get_env_var("SERVER_ADDRESS");
-        let database_url = get_env_var("DATABASE_URL");
+        let postgres_url = get_env_var("POSTGRES_URL");
+        let mongo_url = get_env_var("MONGO_URL");
         let tinkoff_token = get_env_var("TINKOFF_TOKEN");
 
         AppEnv {
             env: Env::from_str(&env).expect("Unknown environment"),
             server_port: server_port.parse().expect("PORT must be a number"),
             server_address: server_address,
-            database_url,
+            postgres_url: postgres_url,
+            mongo_url: mongo_url,
             tinkoff_token,
         }
     }
