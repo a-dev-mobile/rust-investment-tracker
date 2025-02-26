@@ -25,7 +25,7 @@ enabled = true
 interval_seconds = 10  # 1 minute for local development
 max_retries = 3
 retry_delay_seconds = 5
-update_start_time = "00:49"
+update_start_time = "06:59"
 update_end_time = "23:59"
 timezone = "Europe/Moscow"
 

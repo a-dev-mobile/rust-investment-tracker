@@ -1,5 +1,5 @@
 [log]
-level = "debug,sqlx=debug"
+level = "info,sqlx=info"
 format = "text"            # Возможные значения: "json" или "text"
 
 [postgres_db]
@@ -26,7 +26,7 @@ enabled = true
 interval_seconds = 60 
 max_retries = 3
 retry_delay_seconds = 5
-update_start_time = "00:49"
+update_start_time = "06:59"
 update_end_time = "23:59"
 timezone = "Europe/Moscow"
 
