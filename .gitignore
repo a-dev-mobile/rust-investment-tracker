@@ -7,3 +7,4 @@
 rust_doc
 .vscode/scripts/*
 
+.vscode/tasks.json
