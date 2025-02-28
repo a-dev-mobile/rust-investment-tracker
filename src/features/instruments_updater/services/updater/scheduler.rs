@@ -19,6 +19,12 @@ impl TinkoffInstrumentsUpdater {
                 .timezone
         );
 
+        // Initialize status collection on startup
+        match self.initialize_status_collection().await {
+            Ok(_) => info!("Status collection initialized successfully"),
+            Err(e) => error!("Failed to initialize status collection: {}", e),
+        }
+
         let mut interval = time::interval(Duration::from_secs(
             self.settings
                 .app_config
