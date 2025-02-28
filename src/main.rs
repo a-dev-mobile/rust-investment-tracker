@@ -11,7 +11,7 @@ use env_config::models::{
     app_setting::AppSettings,
 };
 
-use features::share_updater::ShareUpdater;
+use features::instruments_updater::TinkoffInstrumentsUpdater;
 
 use services::tinkoff::client_grpc::TinkoffClient;
 use sqlx::PgPool;
@@ -87,13 +87,13 @@ fn create_app(postgres_db: PostgresDb, mongo_db: MongoDb) -> Router {
 }
 
 /// Start the share updater background service
-pub async fn start_share_updater(
+pub async fn start_tinkoff_instruments_updater(
     postgres_db: Arc<PgPool>,
     mongo_db: Arc<MongoDb>,
     settings: Arc<AppSettings>,
     client: Arc<TinkoffClient>,
 ) {
-    let updater = ShareUpdater::new(postgres_db, mongo_db, settings, client).await;
+    let updater = TinkoffInstrumentsUpdater::new(postgres_db, mongo_db, settings, client).await;
     tokio::spawn(async move {
         updater.start_update_loop().await;
     });
@@ -151,7 +151,7 @@ async fn main() {
 
     // Start background services
     // start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
-    start_share_updater(
+    start_tinkoff_instruments_updater(
         db_pool.clone(),
         mongodb_arc.clone(),
         settings.clone(),

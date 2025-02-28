@@ -8,12 +8,13 @@ pub struct AppConfig {
     pub postgres_db: PostgresDbConfig,
     pub mongo_db: MongoDbConfig,
     pub tinkoff_api: TinkoffApiConfig,
-    pub share_updater: ShareUpdaterConfig,
+    pub tinkoff_instruments_updater: TinkoffInstrumentsUpdaterConfig,
+
     pub stream_updater: StreamConfig,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ShareUpdaterConfig {
+pub struct TinkoffInstrumentsUpdaterConfig {
     pub enabled: bool,
     pub interval_seconds: u64,
     pub max_retries: u32,
@@ -63,7 +64,7 @@ pub struct TinkoffApiConfig {
     pub keepalive: u64,
 }
 
-impl ShareUpdaterConfig {
+impl TinkoffInstrumentsUpdaterConfig {
     pub fn is_update_time(&self) -> bool {
         // Парсим временную зону
         let timezone: Tz = self.timezone.parse().expect("Invalid timezone");

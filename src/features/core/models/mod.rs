@@ -1,4 +1,5 @@
 pub mod quotation;
+pub mod bond;
 pub mod money_value;
 pub mod candle_interval;
 pub mod time_stamp;

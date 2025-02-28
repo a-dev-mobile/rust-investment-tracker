@@ -1,5 +1,3 @@
-use chrono::DateTime;
-use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use crate::gen::tinkoff_public_invest_api_contract_v1::Share;

@@ -1,7 +1,4 @@
-use chrono::DateTime;
-use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HumanTradingStatus {
@@ -31,7 +28,7 @@ impl From<i32> for HumanTradingStatus {
             16 => "DEALER_NOT_AVAILABLE_FOR_TRADING",
             _ => "UNKNOWN",
         };
-        
+
         Self {
             raw,
             value: value.to_string(),

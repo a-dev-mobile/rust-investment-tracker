@@ -1,5 +1,5 @@
 use crate::env_config::models::app_setting::AppSettings;
-use mongodb::{Client, Database as MongoDatabase, Collection, options::{ClientOptions, ResolverConfig}};
+use mongodb::{Client, Database as MongoDatabase, Collection, options::ClientOptions};
 use mongodb::bson::Document;
 use std::time::Duration;
 use tracing::{info, error};
@@ -15,6 +15,7 @@ pub struct Collections;
 impl Collections {
     // Market data collections
     pub const TINKOFF_SHARES: &'static str = "tinkoff_shares";
+    pub const TINKOFF_BONDS: &'static str = "tinkoff_bonds";
     pub const STATUS: &'static str = "_status";
 }
 
@@ -76,6 +77,10 @@ impl MongoDb {
     // Convenience methods for commonly used collections
     pub fn shares_collection(&self) -> Collection<Document> {
         self.market_data_db().collection(Collections::TINKOFF_SHARES)
+    }
+
+    pub fn bonds_collection(&self) -> Collection<Document> {
+        self.market_data_db().collection(Collections::TINKOFF_BONDS)
     }
 
     pub fn status_collection(&self) -> Collection<Document> {

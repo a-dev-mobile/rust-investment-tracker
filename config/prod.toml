@@ -21,7 +21,7 @@ timeout = 30   # seconds
 keepalive = 60 # seconds
 
 
-[share_updater]
+[tinkoff_instruments_updater]
 enabled = true
 interval_seconds = 300  # 5 minutes for production
 max_retries = 5
