@@ -3,6 +3,8 @@ mod status;
 mod converter;
 mod shares_service;
 mod bonds_service;
+mod etfs_service;
+mod futures_service;
 mod scheduler;
 
 use crate::{

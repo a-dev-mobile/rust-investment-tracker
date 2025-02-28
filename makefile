@@ -83,6 +83,7 @@ tag-dev:
 	@git tag -a $(TAG) -m "Development release $(TAG)"
 	@git push origin $(TAG)
 	@echo "Тег $(TAG) успешно создан и отправлен"
+	@echo "Статус workflow можно посмотреть по пути: https://github.com/a-dev-mobile/rust-investment-tracker/actions"
 
 
 # Показать текущие переменные окружения

@@ -5,7 +5,6 @@ use tracing::{error, info};
 use super::TinkoffInstrumentsUpdater;
 
 impl TinkoffInstrumentsUpdater {
-   
     pub(super) async fn start_scheduler_loop(&self) {
         info!(
             "Starting instruments update loop with {} second interval (timezone: {})",
@@ -67,6 +66,16 @@ impl TinkoffInstrumentsUpdater {
             match self.update_bonds().await {
                 Ok(_) => info!("Successfully updated bonds data"),
                 Err(e) => error!("Failed to update bonds: {}", e),
+            }
+            // Update ETFs
+            match self.update_etfs().await {
+                Ok(_) => info!("Successfully updated ETFs data"),
+                Err(e) => error!("Failed to update ETFs: {}", e),
+            }
+            // Update futures
+            match self.update_futures().await {
+                Ok(_) => info!("Successfully updated futures data"),
+                Err(e) => error!("Failed to update futures: {}", e),
             }
         }
     }

@@ -1,8 +1,8 @@
 use crate::env_config::models::app_setting::AppSettings;
-use mongodb::{Client, Database as MongoDatabase, Collection, options::ClientOptions};
 use mongodb::bson::Document;
+use mongodb::{options::ClientOptions, Client, Collection, Database as MongoDatabase};
 use std::time::Duration;
-use tracing::{info, error};
+use tracing::{error, info};
 
 // Database names constant
 pub struct DbNames;
@@ -16,6 +16,8 @@ impl Collections {
     // Market data collections
     pub const TINKOFF_SHARES: &'static str = "tinkoff_shares";
     pub const TINKOFF_BONDS: &'static str = "tinkoff_bonds";
+    pub const TINKOFF_ETFS: &'static str = "tinkoff_etfs";
+    pub const TINKOFF_FUTURES: &'static str = "tinkoff_futures";
     pub const STATUS: &'static str = "_status";
 }
 
@@ -56,12 +58,16 @@ impl MongoDb {
         match client
             .database("admin")
             .run_command(mongodb::bson::doc! {"ping": 1})
-            .await {
-                Ok(_) => info!("Successfully connected to MongoDB"),
-                Err(e) => error!("Failed to ping MongoDB server: {}", e)
-            }
+            .await
+        {
+            Ok(_) => info!("Successfully connected to MongoDB"),
+            Err(e) => error!("Failed to ping MongoDB server: {}", e),
+        }
 
-        MongoDb { client, default_database }
+        MongoDb {
+            client,
+            default_database,
+        }
     }
 
     // Helper methods to get specific databases or collections
@@ -73,10 +79,10 @@ impl MongoDb {
         self.client.database(DbNames::MARKET_DATA)
     }
 
-
     // Convenience methods for commonly used collections
     pub fn shares_collection(&self) -> Collection<Document> {
-        self.market_data_db().collection(Collections::TINKOFF_SHARES)
+        self.market_data_db()
+            .collection(Collections::TINKOFF_SHARES)
     }
 
     pub fn bonds_collection(&self) -> Collection<Document> {
@@ -85,5 +91,11 @@ impl MongoDb {
 
     pub fn status_collection(&self) -> Collection<Document> {
         self.market_data_db().collection(Collections::STATUS)
+    }
+    pub fn etfs_collection(&self) -> Collection<Document> {
+        self.market_data_db().collection::<Document>(Collections::TINKOFF_ETFS)
+    }
+    pub fn futures_collection(&self) -> Collection<Document> {
+        self.market_data_db().collection::<Document>(Collections::TINKOFF_FUTURES)
     }
 }
