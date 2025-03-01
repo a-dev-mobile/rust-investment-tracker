@@ -22,7 +22,7 @@ keepalive = 60 # seconds
 
 
 [tinkoff_instruments_updater]
-enabled = false
+enabled = true
 interval_seconds = 605  # 1 minute for local development
 max_retries = 3
 retry_delay_seconds = 5

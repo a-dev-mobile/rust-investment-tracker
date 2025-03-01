@@ -83,8 +83,9 @@ tag-dev:
 	@git tag -a $(TAG) -m "Development release $(TAG)"
 	@git push origin $(TAG)
 	@echo "Тег $(TAG) успешно создан и отправлен"
-	@echo "Статус workflow можно посмотреть по пути: https://github.com/a-dev-mobile/rust-investment-tracker/actions"
-
+	@echo "Статус workflow можно посмотреть по следующим ссылкам:"
+	@echo "  - GitHub Actions: https://github.com/a-dev-mobile/rust-investment-tracker/actions"
+	@echo "  - Docker Hub: https://hub.docker.com/r/wayofdt/investment-tracker/tags"
 
 # Показать текущие переменные окружения
 print-env:
