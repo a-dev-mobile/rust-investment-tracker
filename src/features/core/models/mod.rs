@@ -9,3 +9,4 @@ pub mod share;
 pub mod etf;
 pub mod future;
 pub mod real_exchange;
+pub mod instrument;

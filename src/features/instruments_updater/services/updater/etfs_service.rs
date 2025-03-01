@@ -1,6 +1,8 @@
 use mongodb::bson::doc;
 use tracing::{error, info};
 
+use crate::db::mongo_db::Collections;
+
 use super::TinkoffInstrumentsUpdater;
 
 impl TinkoffInstrumentsUpdater {
@@ -14,7 +16,7 @@ impl TinkoffInstrumentsUpdater {
         let collection = self.mongo_db.etfs_collection();
 
         // Set status to updating
-        self.set_status_updating("tinkoff_etfs").await?;
+        self.set_status_updating(Collections::ETFS).await?;
 
         // Clear existing data
         collection.delete_many(doc! {}).await?;
@@ -42,7 +44,7 @@ impl TinkoffInstrumentsUpdater {
         collection.insert_many(documents).await?;
 
         // Update status to ready
-        self.set_status_ready("tinkoff_etfs").await?;
+        self.set_status_ready(Collections::ETFS).await?;
         info!(
             "Update completed: {} ETF records successfully processed",
             total_etfs

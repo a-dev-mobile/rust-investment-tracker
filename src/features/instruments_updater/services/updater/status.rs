@@ -1,7 +1,10 @@
-use mongodb::bson::doc;
+use mongodb::bson::{doc, Document};
+use chrono::Utc;
+use serde::{Serialize, Deserialize};
 use tracing::info;
 
 use super::TinkoffInstrumentsUpdater;
+
 
 impl TinkoffInstrumentsUpdater {
     // New method to initialize the status collection
@@ -12,12 +15,10 @@ impl TinkoffInstrumentsUpdater {
         let count = status_collection.count_documents(doc! {}).await?;
 
         if count == 0 {
-            // If no documents exist, create an initial status document
+            // Initialize with an empty document
             status_collection
                 .insert_one(doc! {
-                    "initialized_at": chrono::Utc::now().to_rfc3339(),
-                    "tinkoff_shares": "not_started",
-                    "tinkoff_bonds": "not_started"
+                    "initialized_at": Utc::now().to_rfc3339(),
                 })
                 .await?;
             info!("Status collection initialized with a base document");
@@ -36,17 +37,25 @@ impl TinkoffInstrumentsUpdater {
         self.initialize_status_collection().await?;
 
         let status_collection = self.mongo_db.status_collection();
+        let now = Utc::now().to_rfc3339();
+        
         status_collection
             .update_one(
                 doc! {},
                 doc! {
-                    "$set": { collection_name: "updating" }
+                    "$set": {
+                        collection_name: {
+                            "status": "updating",
+                            "updated_at": now.clone()
+                        }
+                    }
                 },
             )
             .await?;
         info!(
-            "Status set to 'updating' for {} collection",
-            collection_name
+            "Status set to 'updating' for {} collection at {}",
+            collection_name,
+            now
         );
         Ok(())
     }
@@ -59,15 +68,26 @@ impl TinkoffInstrumentsUpdater {
         self.initialize_status_collection().await?;
 
         let status_collection = self.mongo_db.status_collection();
+        let now = Utc::now().to_rfc3339();
+        
         status_collection
             .update_one(
                 doc! {},
                 doc! {
-                    "$set": { collection_name: "ready" }
+                    "$set": {
+                        collection_name: {
+                            "status": "ready",
+                            "updated_at": now.clone()
+                        }
+                    }
                 },
             )
             .await?;
-        info!("Status set to 'ready' for {} collection", collection_name);
+        info!(
+            "Status set to 'ready' for {} collection at {}",
+            collection_name,
+            &now
+        );
         Ok(())
     }
 }

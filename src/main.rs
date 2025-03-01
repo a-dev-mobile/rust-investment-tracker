@@ -10,7 +10,7 @@ use env_config::models::{
     app_env::{AppEnv, Env},
     app_setting::AppSettings,
 };
-
+use features::candles_tracking::CandlesTrackingUpdater;
 use features::instruments_updater::TinkoffInstrumentsUpdater;
 
 use services::tinkoff::client_grpc::TinkoffClient;
@@ -98,7 +98,17 @@ pub async fn start_tinkoff_instruments_updater(
         updater.start_update_loop().await;
     });
 }
-
+pub async fn start_candles_tracking_updater(
+    postgres_db: Arc<PgPool>,
+    mongo_db: Arc<MongoDb>,
+    settings: Arc<AppSettings>,
+    client: Arc<TinkoffClient>,
+) {
+    let updater = CandlesTrackingUpdater::new(postgres_db, mongo_db, settings, client).await;
+    tokio::spawn(async move {
+        updater.start_update_loop().await;
+    });
+}
 /// Start the HTTP server
 async fn run_server(app: Router, addr: SocketAddr) {
     tracing::info!("Starting server on {}", addr);
@@ -159,6 +169,13 @@ async fn main() {
     )
     .await;
 
+    start_candles_tracking_updater(
+        db_pool.clone(),
+        mongodb_arc.clone(),
+        settings.clone(),
+        tinkoff_client.clone(),
+    )
+    .await;
     // Start HTTP server
     run_server(app, http_addr).await;
 }

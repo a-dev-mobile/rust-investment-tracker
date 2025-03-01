@@ -1,6 +1,8 @@
 use mongodb::bson::doc;
 use tracing::{error, info};
 
+use crate::db::mongo_db::Collections;
+
 use super::TinkoffInstrumentsUpdater;
 
 impl TinkoffInstrumentsUpdater {
@@ -14,7 +16,7 @@ impl TinkoffInstrumentsUpdater {
         let collection = self.mongo_db.futures_collection();
 
         // Set status to updating
-        self.set_status_updating("tinkoff_futures").await?;
+        self.set_status_updating(Collections::FUTURES).await?;
 
         // Clear existing data
         collection.delete_many(doc! {}).await?;
@@ -42,7 +44,7 @@ impl TinkoffInstrumentsUpdater {
         collection.insert_many(documents).await?;
 
         // Update status to ready
-        self.set_status_ready("tinkoff_futures").await?;
+        self.set_status_ready(Collections::FUTURES).await?;
         info!(
             "Update completed: {} futures records successfully processed",
             total_futures

@@ -8,17 +8,20 @@ use tracing::{error, info};
 pub struct DbNames;
 impl DbNames {
     pub const MARKET_DATA: &'static str = "market_data";
+    pub const MARKET_SERVICES: &'static str = "market_services";
 }
 
 // Collection names constant
 pub struct Collections;
 impl Collections {
     // Market data collections
-    pub const TINKOFF_SHARES: &'static str = "tinkoff_shares";
-    pub const TINKOFF_BONDS: &'static str = "tinkoff_bonds";
-    pub const TINKOFF_ETFS: &'static str = "tinkoff_etfs";
-    pub const TINKOFF_FUTURES: &'static str = "tinkoff_futures";
+    pub const SHARES: &'static str = "shares";
+    pub const BONDS: &'static str = "bonds";
+    pub const ETFS: &'static str = "etfs";
+    pub const FUTURES: &'static str = "futures";
     pub const STATUS: &'static str = "_status";
+
+    pub const CANDLES_TRACKING: &'static str = "candles_tracking";
 }
 
 #[derive(Clone)]
@@ -78,24 +81,32 @@ impl MongoDb {
     pub fn market_data_db(&self) -> MongoDatabase {
         self.client.database(DbNames::MARKET_DATA)
     }
-
+    pub fn market_service_db(&self) -> MongoDatabase {
+        self.client.database(DbNames::MARKET_SERVICES)
+    }
     // Convenience methods for commonly used collections
     pub fn shares_collection(&self) -> Collection<Document> {
-        self.market_data_db()
-            .collection(Collections::TINKOFF_SHARES)
+        self.market_data_db().collection(Collections::SHARES)
     }
 
     pub fn bonds_collection(&self) -> Collection<Document> {
-        self.market_data_db().collection(Collections::TINKOFF_BONDS)
+        self.market_data_db().collection(Collections::BONDS)
     }
 
     pub fn status_collection(&self) -> Collection<Document> {
         self.market_data_db().collection(Collections::STATUS)
     }
     pub fn etfs_collection(&self) -> Collection<Document> {
-        self.market_data_db().collection::<Document>(Collections::TINKOFF_ETFS)
+        self.market_data_db()
+            .collection::<Document>(Collections::ETFS)
     }
     pub fn futures_collection(&self) -> Collection<Document> {
-        self.market_data_db().collection::<Document>(Collections::TINKOFF_FUTURES)
+        self.market_data_db()
+            .collection::<Document>(Collections::FUTURES)
+    }
+
+    pub fn candles_tracking_collection(&self) -> Collection<Document> {
+        self.market_service_db()
+            .collection::<Document>(Collections::CANDLES_TRACKING)
     }
 }
