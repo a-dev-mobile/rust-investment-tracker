@@ -3,12 +3,13 @@ use serde::{Deserialize, Serialize};
 use crate::gen::tinkoff_public_invest_api_contract_v1::Share;
 
 use super::{
-    money_value::MoneyValueModel, quotation::QuotationModel, real_exchange::RealExchangeModel,
-    share_type::ShareTypeModel, time_stamp::TimestampModel, trading_status::TradingStatusModel,
+    money_value::TinkoffMoneyValueModel, quotation::TinkoffQuotationModel,
+    real_exchange::TinkoffRealExchangeModel, share_type::TinkoffShareTypeModel,
+    time_stamp::TinkoffTimestampModel, trading_status::TinkoffTradingStatusModel,
 };
 /// Complete human-readable share model
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ShareModel {
+pub struct TinkoffShareModel {
     // Basic fields
     pub figi: String,
     pub ticker: String,
@@ -35,9 +36,9 @@ pub struct ShareModel {
     pub liquidity_flag: bool,
 
     // Enhanced enum fields
-    pub trading_status: TradingStatusModel,
-    pub share_type: ShareTypeModel,
-    pub real_exchange: RealExchangeModel,
+    pub trading_status: TinkoffTradingStatusModel,
+    pub share_type: TinkoffShareTypeModel,
+    pub real_exchange: TinkoffRealExchangeModel,
 
     // Other fields
     pub issue_size: i64,
@@ -47,22 +48,22 @@ pub struct ShareModel {
     pub sector: String,
 
     // Optional fields with enhanced types
-    pub klong: Option<QuotationModel>,
-    pub kshort: Option<QuotationModel>,
-    pub dlong: Option<QuotationModel>,
-    pub dshort: Option<QuotationModel>,
-    pub dlong_min: Option<QuotationModel>,
-    pub dshort_min: Option<QuotationModel>,
-    pub min_price_increment: Option<QuotationModel>,
-    pub nominal: Option<MoneyValueModel>,
-    pub ipo_date: Option<TimestampModel>,
-    pub first_1min_candle_date: Option<TimestampModel>,
-    pub first_1day_candle_date: Option<TimestampModel>,
+    pub klong: Option<TinkoffQuotationModel>,
+    pub kshort: Option<TinkoffQuotationModel>,
+    pub dlong: Option<TinkoffQuotationModel>,
+    pub dshort: Option<TinkoffQuotationModel>,
+    pub dlong_min: Option<TinkoffQuotationModel>,
+    pub dshort_min: Option<TinkoffQuotationModel>,
+    pub min_price_increment: Option<TinkoffQuotationModel>,
+    pub nominal: Option<TinkoffMoneyValueModel>,
+    pub ipo_date: Option<TinkoffTimestampModel>,
+    pub first_1min_candle_date: Option<TinkoffTimestampModel>,
+    pub first_1day_candle_date: Option<TinkoffTimestampModel>,
 }
 
-impl From<&Share> for ShareModel {
+impl From<&Share> for TinkoffShareModel {
     fn from(share: &Share) -> Self {
-        ShareModel {
+        TinkoffShareModel {
             figi: share.figi.clone(),
             ticker: share.ticker.clone(),
             class_code: share.class_code.clone(),
@@ -86,9 +87,9 @@ impl From<&Share> for ShareModel {
             blocked_tca_flag: share.blocked_tca_flag,
             liquidity_flag: share.liquidity_flag,
 
-            trading_status: TradingStatusModel::from(share.trading_status),
-            share_type: ShareTypeModel::from(share.share_type),
-            real_exchange: RealExchangeModel::from(share.real_exchange),
+            trading_status: TinkoffTradingStatusModel::from(share.trading_status),
+            share_type: TinkoffShareTypeModel::from(share.share_type),
+            real_exchange: TinkoffRealExchangeModel::from(share.real_exchange),
 
             issue_size: share.issue_size,
             issue_size_plan: share.issue_size_plan,
@@ -96,23 +97,26 @@ impl From<&Share> for ShareModel {
             country_of_risk_name: share.country_of_risk_name.clone(),
             sector: share.sector.clone(),
 
-            klong: share.klong.as_ref().map(QuotationModel::from),
-            kshort: share.kshort.as_ref().map(QuotationModel::from),
-            dlong: share.dlong.as_ref().map(QuotationModel::from),
-            dshort: share.dshort.as_ref().map(QuotationModel::from),
-            dlong_min: share.dlong_min.as_ref().map(QuotationModel::from),
-            dshort_min: share.dshort_min.as_ref().map(QuotationModel::from),
-            min_price_increment: share.min_price_increment.as_ref().map(QuotationModel::from),
-            nominal: share.nominal.as_ref().map(MoneyValueModel::from),
-            ipo_date: share.ipo_date.as_ref().map(TimestampModel::from),
+            klong: share.klong.as_ref().map(TinkoffQuotationModel::from),
+            kshort: share.kshort.as_ref().map(TinkoffQuotationModel::from),
+            dlong: share.dlong.as_ref().map(TinkoffQuotationModel::from),
+            dshort: share.dshort.as_ref().map(TinkoffQuotationModel::from),
+            dlong_min: share.dlong_min.as_ref().map(TinkoffQuotationModel::from),
+            dshort_min: share.dshort_min.as_ref().map(TinkoffQuotationModel::from),
+            min_price_increment: share
+                .min_price_increment
+                .as_ref()
+                .map(TinkoffQuotationModel::from),
+            nominal: share.nominal.as_ref().map(TinkoffMoneyValueModel::from),
+            ipo_date: share.ipo_date.as_ref().map(TinkoffTimestampModel::from),
             first_1min_candle_date: share
                 .first_1min_candle_date
                 .as_ref()
-                .map(TimestampModel::from),
+                .map(TinkoffTimestampModel::from),
             first_1day_candle_date: share
                 .first_1day_candle_date
                 .as_ref()
-                .map(TimestampModel::from),
+                .map(TinkoffTimestampModel::from),
         }
     }
 }

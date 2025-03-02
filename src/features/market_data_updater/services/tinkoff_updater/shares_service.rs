@@ -16,7 +16,8 @@ impl TinkoffInstrumentsUpdater {
         let collection = self.mongo_db.shares_collection();
 
         // Set status to updating
-        self.set_status_updating(Collections::SHARES).await?;
+        self.set_status_updating(Collections::TINKOFF_SHARES)
+            .await?;
 
         // Clear existing data
         collection.delete_many(doc! {}).await?;
@@ -44,7 +45,7 @@ impl TinkoffInstrumentsUpdater {
         collection.insert_many(documents).await?;
 
         // Update status to ready
-        self.set_status_ready(Collections::SHARES).await?;
+        self.set_status_ready(Collections::TINKOFF_SHARES).await?;
         info!(
             "Update completed: {} share records successfully processed",
             total_shares

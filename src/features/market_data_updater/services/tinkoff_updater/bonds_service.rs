@@ -16,7 +16,7 @@ impl TinkoffInstrumentsUpdater {
         let collection = self.mongo_db.bonds_collection();
 
         // Set status to updating
-        self.set_status_updating(Collections::BONDS).await?;
+        self.set_status_updating(Collections::TINKOFF_BONDS).await?;
 
         // Clear existing data
         collection.delete_many(doc! {}).await?;
@@ -44,7 +44,7 @@ impl TinkoffInstrumentsUpdater {
         collection.insert_many(documents).await?;
 
         // Update status to ready
-        self.set_status_ready(Collections::BONDS).await?;
+        self.set_status_ready(Collections::TINKOFF_BONDS).await?;
         info!(
             "Update completed: {} bond records successfully processed",
             total_bonds

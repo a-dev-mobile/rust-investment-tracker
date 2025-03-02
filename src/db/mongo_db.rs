@@ -9,16 +9,17 @@ pub struct DbNames;
 impl DbNames {
     pub const MARKET_DATA: &'static str = "market_data";
     pub const MARKET_SERVICES: &'static str = "market_services";
+    pub const USER_BOT_CONFIG: &'static str = "user_bot_config";
 }
 
 // Collection names constant
 pub struct Collections;
 impl Collections {
     // Market data collections
-    pub const SHARES: &'static str = "shares";
-    pub const BONDS: &'static str = "bonds";
-    pub const ETFS: &'static str = "etfs";
-    pub const FUTURES: &'static str = "futures";
+    pub const TINKOFF_SHARES: &'static str = "tinkoff_shares";
+    pub const TINKOFF_BONDS: &'static str = "tinkoff_bonds";
+    pub const TINKOFF_ETFS: &'static str = "tinkoff_etfs";
+    pub const TINKOFF_FUTURES: &'static str = "tinkoff_futures";
     pub const STATUS: &'static str = "_status";
 
     pub const CANDLES_TRACKING: &'static str = "candles_tracking";
@@ -86,11 +87,12 @@ impl MongoDb {
     }
     // Convenience methods for commonly used collections
     pub fn shares_collection(&self) -> Collection<Document> {
-        self.market_data_db().collection(Collections::SHARES)
+        self.market_data_db()
+            .collection(Collections::TINKOFF_SHARES)
     }
 
     pub fn bonds_collection(&self) -> Collection<Document> {
-        self.market_data_db().collection(Collections::BONDS)
+        self.market_data_db().collection(Collections::TINKOFF_BONDS)
     }
 
     pub fn status_collection(&self) -> Collection<Document> {
@@ -98,11 +100,11 @@ impl MongoDb {
     }
     pub fn etfs_collection(&self) -> Collection<Document> {
         self.market_data_db()
-            .collection::<Document>(Collections::ETFS)
+            .collection::<Document>(Collections::TINKOFF_ETFS)
     }
     pub fn futures_collection(&self) -> Collection<Document> {
         self.market_data_db()
-            .collection::<Document>(Collections::FUTURES)
+            .collection::<Document>(Collections::TINKOFF_FUTURES)
     }
 
     pub fn candles_tracking_collection(&self) -> Collection<Document> {

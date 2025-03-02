@@ -10,11 +10,11 @@ impl TinkoffInstrumentsUpdater {
             "Starting instruments update loop with {} second interval (timezone: {})",
             self.settings
                 .app_config
-                .tinkoff_instruments_updater
+                .tinkoff_market_data_updater
                 .interval_seconds,
             self.settings
                 .app_config
-                .tinkoff_instruments_updater
+                .tinkoff_market_data_updater
                 .timezone
         );
 
@@ -27,7 +27,7 @@ impl TinkoffInstrumentsUpdater {
         let mut interval = time::interval(Duration::from_secs(
             self.settings
                 .app_config
-                .tinkoff_instruments_updater
+                .tinkoff_market_data_updater
                 .interval_seconds,
         ));
 
@@ -37,18 +37,18 @@ impl TinkoffInstrumentsUpdater {
             if !self
                 .settings
                 .app_config
-                .tinkoff_instruments_updater
+                .tinkoff_market_data_updater
                 .is_update_time()
             {
                 info!(
                     "Current time outside update window ({}-{})",
                     self.settings
                         .app_config
-                        .tinkoff_instruments_updater
+                        .tinkoff_market_data_updater
                         .update_start_time,
                     self.settings
                         .app_config
-                        .tinkoff_instruments_updater
+                        .tinkoff_market_data_updater
                         .update_end_time
                 );
                 continue;

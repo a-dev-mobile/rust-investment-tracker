@@ -11,7 +11,7 @@ use env_config::models::{
     app_setting::AppSettings,
 };
 use features::candles_tracking::CandlesTrackingUpdater;
-use features::instruments_updater::TinkoffInstrumentsUpdater;
+use features::market_data_updater::TinkoffInstrumentsUpdater;
 
 use services::tinkoff::client_grpc::TinkoffClient;
 use sqlx::PgPool;
@@ -87,7 +87,7 @@ fn create_app(postgres_db: PostgresDb, mongo_db: MongoDb) -> Router {
 }
 
 /// Start the share updater background service
-pub async fn start_tinkoff_instruments_updater(
+pub async fn start_tinkoff_market_data_updater(
     postgres_db: Arc<PgPool>,
     mongo_db: Arc<MongoDb>,
     settings: Arc<AppSettings>,
@@ -161,7 +161,7 @@ async fn main() {
 
     // Start background services
     // start_candles_updater(db_pool.clone(), settings.clone(), tinkoff_client.clone()).await;
-    start_tinkoff_instruments_updater(
+    start_tinkoff_market_data_updater(
         db_pool.clone(),
         mongodb_arc.clone(),
         settings.clone(),

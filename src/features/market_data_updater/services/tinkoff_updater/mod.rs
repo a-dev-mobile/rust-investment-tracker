@@ -1,19 +1,18 @@
-mod client;
-mod status;
-mod converter;
-mod shares_service;
 mod bonds_service;
+mod client;
+mod converter;
 mod etfs_service;
 mod futures_service;
 mod scheduler;
+mod shares_service;
+mod status;
 
 use crate::{
-    db::MongoDb,
-    env_config::models::app_setting::AppSettings,
+    db::MongoDb, env_config::models::app_setting::AppSettings,
     services::tinkoff::client_grpc::TinkoffClient,
 };
-use std::sync::Arc;
 use sqlx::PgPool;
+use std::sync::Arc;
 use tracing::info;
 
 pub struct TinkoffInstrumentsUpdater {
@@ -37,7 +36,7 @@ impl TinkoffInstrumentsUpdater {
     }
 
     pub async fn start_update_loop(&self) {
-        if !self.settings.app_config.tinkoff_instruments_updater.enabled {
+        if !self.settings.app_config.tinkoff_market_data_updater.enabled {
             info!("Instruments updater is disabled in configuration");
             return;
         }

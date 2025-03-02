@@ -1,5 +1,6 @@
 use crate::features::core::models::{
-    bond::BondModel, etf::EtfModel, future::FutureModel, share::ShareModel,
+    bond::TinkoffBondModel, etf::TinkoffEtfModel, future::TinkoffFutureModel,
+    share::TinkoffShareModel,
 };
 use mongodb::bson::{doc, Document};
 use tracing::error;
@@ -12,7 +13,7 @@ impl TinkoffInstrumentsUpdater {
         share: &crate::gen::tinkoff_public_invest_api_contract_v1::Share,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_share = ShareModel::from(share);
+        let human_share = TinkoffShareModel::from(share);
 
         // Convert to BSON Document using serde
         match bson::to_document(&human_share) {
@@ -34,7 +35,7 @@ impl TinkoffInstrumentsUpdater {
         bond: &crate::gen::tinkoff_public_invest_api_contract_v1::Bond,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_bond = BondModel::from(bond);
+        let human_bond = TinkoffBondModel::from(bond);
 
         // Convert to BSON Document using serde
         match bson::to_document(&human_bond) {
@@ -53,7 +54,7 @@ impl TinkoffInstrumentsUpdater {
         etf: &crate::gen::tinkoff_public_invest_api_contract_v1::Etf,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_etf = EtfModel::from(etf);
+        let human_etf = TinkoffEtfModel::from(etf);
 
         // Convert to BSON Document using serde
         match bson::to_document(&human_etf) {
@@ -71,7 +72,7 @@ impl TinkoffInstrumentsUpdater {
         future: &crate::gen::tinkoff_public_invest_api_contract_v1::Future,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_future = FutureModel::from(future);
+        let human_future = TinkoffFutureModel::from(future);
 
         // Convert to BSON Document using serde
         match bson::to_document(&human_future) {

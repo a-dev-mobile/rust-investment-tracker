@@ -5,13 +5,13 @@ use serde::{Deserialize, Serialize};
 
 /// Human-readable Timestamp model
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TimestampModel {
+pub struct TinkoffTimestampModel {
     pub seconds: i64,
     pub nanos: i32,
     pub timestamp_utc: String, 
 }
 
-impl From<&Timestamp> for TimestampModel {
+impl From<&Timestamp> for TinkoffTimestampModel {
     fn from(ts: &Timestamp) -> Self {
         let seconds = ts.seconds;
         let nanos = ts.nanos;

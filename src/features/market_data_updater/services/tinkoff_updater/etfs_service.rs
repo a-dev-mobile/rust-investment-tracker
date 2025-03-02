@@ -16,7 +16,7 @@ impl TinkoffInstrumentsUpdater {
         let collection = self.mongo_db.etfs_collection();
 
         // Set status to updating
-        self.set_status_updating(Collections::ETFS).await?;
+        self.set_status_updating(Collections::TINKOFF_ETFS).await?;
 
         // Clear existing data
         collection.delete_many(doc! {}).await?;
@@ -44,7 +44,7 @@ impl TinkoffInstrumentsUpdater {
         collection.insert_many(documents).await?;
 
         // Update status to ready
-        self.set_status_ready(Collections::ETFS).await?;
+        self.set_status_ready(Collections::TINKOFF_ETFS).await?;
         info!(
             "Update completed: {} ETF records successfully processed",
             total_etfs

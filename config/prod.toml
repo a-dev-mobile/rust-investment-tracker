@@ -21,7 +21,7 @@ timeout = 30   # seconds
 keepalive = 60 # seconds
 
 
-[tinkoff_instruments_updater]
+[tinkoff_market_data_updater]
 enabled = true
 interval_seconds = 300  # 5 minutes for production
 max_retries = 5

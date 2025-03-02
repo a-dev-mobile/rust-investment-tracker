@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::gen::tinkoff_public_invest_api_contract_v1::RealExchange;
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RealExchangeModel {
+pub struct TinkoffRealExchangeModel {
     pub raw: i32,
     pub name: String,
 }
 
-impl From<i32> for RealExchangeModel {
+impl From<i32> for TinkoffRealExchangeModel {
     fn from(raw: i32) -> Self {
         let name = match raw {
             0 => "REAL_EXCHANGE_UNSPECIFIED",
@@ -25,7 +25,7 @@ impl From<i32> for RealExchangeModel {
 }
 
 /// Реализация From для enum RealExchange
-impl From<RealExchange> for RealExchangeModel {
+impl From<RealExchange> for TinkoffRealExchangeModel {
     fn from(real_exchange: RealExchange) -> Self {
         Self::from(real_exchange as i32)
     }

@@ -20,7 +20,7 @@ domain = "invest-public-api.tinkoff.ru"
 timeout = 30   # seconds
 keepalive = 60 # seconds
 
-[tinkoff_instruments_updater]
+[tinkoff_market_data_updater]
 enabled = true
 interval_seconds = 10  # 1 minute for local development
 max_retries = 3

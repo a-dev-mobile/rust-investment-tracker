@@ -2,11 +2,11 @@ use std::collections::HashSet;
 use std::vec;
 
 use crate::db::mongo_db::{Collections, DbNames};
-use crate::features::core::models::bond::BondModel;
-use crate::features::core::models::etf::EtfModel;
-use crate::features::core::models::future::FutureModel;
-use crate::features::core::models::instrument::InstrumentEnum;
-use crate::features::core::models::share::ShareModel;
+use crate::features::core::models::bond::TinkoffBondModel;
+use crate::features::core::models::etf::TinkoffEtfModel;
+use crate::features::core::models::future::TinkoffFutureModel;
+use crate::features::core::models::instrument::TinkoffInstrumentEnum;
+use crate::features::core::models::share::TinkoffShareModel;
 
 use super::CandlesTrackingUpdater;
 use bson::oid::ObjectId;
@@ -174,7 +174,7 @@ impl CandlesTrackingUpdater {
     /// Поиск инструмента по UID во всех коллекциях
     ///
     /// Последовательно проверяет коллекции акций, облигаций, ETF и фьючерсов
-    async fn find_instrument_by_figi(&self, figi: &str) -> Option<InstrumentEnum> {
+    async fn find_instrument_by_figi(&self, figi: &str) -> Option<TinkoffInstrumentEnum> {
         // Filter for searching by FIGI
         let filter = doc! { "figi": figi };
 
@@ -186,8 +186,8 @@ impl CandlesTrackingUpdater {
             .await
         {
             // Convert BSON document to HumanShare
-            match bson::from_document::<ShareModel>(doc) {
-                Ok(share) => return Some(InstrumentEnum::Share(share)),
+            match bson::from_document::<TinkoffShareModel>(doc) {
+                Ok(share) => return Some(TinkoffInstrumentEnum::Share(share)),
                 Err(e) => {
                     error!("Failed to deserialize Share document: {}", e);
                     // Continue checking other collections
@@ -202,8 +202,8 @@ impl CandlesTrackingUpdater {
             .find_one(filter.clone())
             .await
         {
-            match bson::from_document::<BondModel>(doc) {
-                Ok(bond) => return Some(InstrumentEnum::Bond(bond)),
+            match bson::from_document::<TinkoffBondModel>(doc) {
+                Ok(bond) => return Some(TinkoffInstrumentEnum::Bond(bond)),
                 Err(e) => {
                     error!("Failed to deserialize Bond document: {}", e);
                 }
@@ -217,8 +217,8 @@ impl CandlesTrackingUpdater {
             .find_one(filter.clone())
             .await
         {
-            match bson::from_document::<EtfModel>(doc) {
-                Ok(etf) => return Some(InstrumentEnum::Etf(etf)),
+            match bson::from_document::<TinkoffEtfModel>(doc) {
+                Ok(etf) => return Some(TinkoffInstrumentEnum::Etf(etf)),
                 Err(e) => {
                     error!("Failed to deserialize ETF document: {}", e);
                 }
@@ -232,8 +232,8 @@ impl CandlesTrackingUpdater {
             .find_one(filter.clone())
             .await
         {
-            match bson::from_document::<FutureModel>(doc) {
-                Ok(future) => return Some(InstrumentEnum::Future(future)),
+            match bson::from_document::<TinkoffFutureModel>(doc) {
+                Ok(future) => return Some(TinkoffInstrumentEnum::Future(future)),
                 Err(e) => {
                     error!("Failed to deserialize Future document: {}", e);
                 }
@@ -247,11 +247,11 @@ impl CandlesTrackingUpdater {
     async fn create_updated_tracking_document(
         &self,
         original_doc: Document,
-        instrument: InstrumentEnum,
+        instrument: TinkoffInstrumentEnum,
     ) -> Result<Document, mongodb::error::Error> {
         // Extract data based on the instrument type
         let instrument_data = match &instrument {
-            InstrumentEnum::Share(share) => {
+            TinkoffInstrumentEnum::Share(share) => {
                 doc! {
                     "figi": &share.figi,
                     "ticker": &share.ticker,
@@ -262,7 +262,7 @@ impl CandlesTrackingUpdater {
                     "lot": share.lot,
                 }
             }
-            InstrumentEnum::Bond(bond) => {
+            TinkoffInstrumentEnum::Bond(bond) => {
                 doc! {
                     "figi": &bond.figi,
                     "ticker": &bond.ticker,
@@ -273,7 +273,7 @@ impl CandlesTrackingUpdater {
                     "lot": bond.lot,
                 }
             }
-            InstrumentEnum::Etf(etf) => {
+            TinkoffInstrumentEnum::Etf(etf) => {
                 doc! {
                     "figi": &etf.figi,
                     "ticker": &etf.ticker,
@@ -284,7 +284,7 @@ impl CandlesTrackingUpdater {
                     "lot": etf.lot,
                 }
             }
-            InstrumentEnum::Future(future) => {
+            TinkoffInstrumentEnum::Future(future) => {
                 doc! {
                     "figi": &future.figi,
                     "ticker": &future.ticker,
