@@ -2,11 +2,11 @@ use std::collections::HashSet;
 use std::vec;
 
 use crate::db::mongo_db::{Collections, DbNames};
-use crate::features::core::models::bond::HumanBond;
-use crate::features::core::models::etf::HumanEtf;
-use crate::features::core::models::future::HumanFuture;
-use crate::features::core::models::instrument::HumanInstrument;
-use crate::features::core::models::share::HumanShare;
+use crate::features::core::models::bond::BondModel;
+use crate::features::core::models::etf::EtfModel;
+use crate::features::core::models::future::FutureModel;
+use crate::features::core::models::instrument::InstrumentEnum;
+use crate::features::core::models::share::ShareModel;
 
 use super::CandlesTrackingUpdater;
 use bson::oid::ObjectId;
@@ -19,7 +19,6 @@ use mongodb::Collection;
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 use tracing::{error, info};
-
 
 // Define the struct to match the returned data format
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,7 +45,10 @@ impl CandlesTrackingUpdater {
             .process_enabled_documents(enabled_documents, &tracking_collection)
             .await;
 
-        info!("Candles tracking update completed: {} documents updated", updated_count);
+        info!(
+            "Candles tracking update completed: {} documents updated",
+            updated_count
+        );
 
         Ok(())
     }
@@ -85,14 +87,15 @@ impl CandlesTrackingUpdater {
                     "$project": doc! {
                         "original_id": 0
                     }
-                }
+                },
             ])
             .await?
             .try_collect()
             .await?;
 
         // Convert documents to TrackingDocument structs
-        let tracking_documents = documents.into_iter()
+        let tracking_documents = documents
+            .into_iter()
             .filter_map(|doc| {
                 let id = doc.get_object_id("_id").ok()?;
                 let figi = doc.get_str("figi").ok()?.to_string();
@@ -112,12 +115,9 @@ impl CandlesTrackingUpdater {
 
         for doc in tracking_documents {
             // Get the original document first
-            if let Ok(Some(original_doc)) = collection
-                .find_one(doc! { "_id": doc.id })
-                .await
-            {
+            if let Ok(Some(original_doc)) = collection.find_one(doc! { "_id": doc.id }).await {
                 let figi = doc.figi.clone(); // Clone the figi before it's moved
-                // Try to update the document with instrument data
+                                             // Try to update the document with instrument data
                 match self
                     .update_document_with_instrument_data(&original_doc, doc.figi, collection)
                     .await
@@ -140,7 +140,10 @@ impl CandlesTrackingUpdater {
         // Find instrument by FIGI
         if let Some(instrument) = self.find_instrument_by_figi(&figi).await {
             // Create updated document
-            match self.create_updated_tracking_document(doc.clone(), instrument).await {
+            match self
+                .create_updated_tracking_document(doc.clone(), instrument)
+                .await
+            {
                 Ok(updated_doc) => {
                     // Update document in collection
                     match collection
@@ -171,7 +174,7 @@ impl CandlesTrackingUpdater {
     /// Поиск инструмента по UID во всех коллекциях
     ///
     /// Последовательно проверяет коллекции акций, облигаций, ETF и фьючерсов
-    async fn find_instrument_by_figi(&self, figi: &str) -> Option<HumanInstrument> {
+    async fn find_instrument_by_figi(&self, figi: &str) -> Option<InstrumentEnum> {
         // Filter for searching by FIGI
         let filter = doc! { "figi": figi };
 
@@ -183,8 +186,8 @@ impl CandlesTrackingUpdater {
             .await
         {
             // Convert BSON document to HumanShare
-            match mongodb::bson::from_document::<HumanShare>(doc) {
-                Ok(share) => return Some(HumanInstrument::Share(share)),
+            match bson::from_document::<ShareModel>(doc) {
+                Ok(share) => return Some(InstrumentEnum::Share(share)),
                 Err(e) => {
                     error!("Failed to deserialize Share document: {}", e);
                     // Continue checking other collections
@@ -199,8 +202,8 @@ impl CandlesTrackingUpdater {
             .find_one(filter.clone())
             .await
         {
-            match mongodb::bson::from_document::<HumanBond>(doc) {
-                Ok(bond) => return Some(HumanInstrument::Bond(bond)),
+            match bson::from_document::<BondModel>(doc) {
+                Ok(bond) => return Some(InstrumentEnum::Bond(bond)),
                 Err(e) => {
                     error!("Failed to deserialize Bond document: {}", e);
                 }
@@ -214,8 +217,8 @@ impl CandlesTrackingUpdater {
             .find_one(filter.clone())
             .await
         {
-            match mongodb::bson::from_document::<HumanEtf>(doc) {
-                Ok(etf) => return Some(HumanInstrument::Etf(etf)),
+            match bson::from_document::<EtfModel>(doc) {
+                Ok(etf) => return Some(InstrumentEnum::Etf(etf)),
                 Err(e) => {
                     error!("Failed to deserialize ETF document: {}", e);
                 }
@@ -229,8 +232,8 @@ impl CandlesTrackingUpdater {
             .find_one(filter.clone())
             .await
         {
-            match mongodb::bson::from_document::<HumanFuture>(doc) {
-                Ok(future) => return Some(HumanInstrument::Future(future)),
+            match bson::from_document::<FutureModel>(doc) {
+                Ok(future) => return Some(InstrumentEnum::Future(future)),
                 Err(e) => {
                     error!("Failed to deserialize Future document: {}", e);
                 }
@@ -244,54 +247,54 @@ impl CandlesTrackingUpdater {
     async fn create_updated_tracking_document(
         &self,
         original_doc: Document,
-        instrument: HumanInstrument,
+        instrument: InstrumentEnum,
     ) -> Result<Document, mongodb::error::Error> {
         // Extract data based on the instrument type
         let instrument_data = match &instrument {
-            HumanInstrument::Share(share) => {
+            InstrumentEnum::Share(share) => {
                 doc! {
                     "figi": &share.figi,
                     "ticker": &share.ticker,
                     "name": &share.name,
                     "instrument_type": "share",
-                    "first_available_date": share.first_1day_candle_date.as_ref().map(|d| d.iso_string.clone()),
+                    "first_available_date": share.first_1day_candle_date.as_ref().map(|d| d.timestamp_utc.clone()),
                     "currency": &share.currency,
                     "lot": share.lot,
                 }
-            },
-            HumanInstrument::Bond(bond) => {
+            }
+            InstrumentEnum::Bond(bond) => {
                 doc! {
                     "figi": &bond.figi,
                     "ticker": &bond.ticker,
                     "name": &bond.name,
                     "instrument_type": "bond",
-                    "first_available_date": bond.first_1day_candle_date.as_ref().map(|d| d.iso_string.clone()),
+                    "first_available_date": bond.first_1day_candle_date.as_ref().map(|d| d.timestamp_utc.clone()),
                     "currency": &bond.currency,
                     "lot": bond.lot,
                 }
-            },
-            HumanInstrument::Etf(etf) => {
+            }
+            InstrumentEnum::Etf(etf) => {
                 doc! {
                     "figi": &etf.figi,
                     "ticker": &etf.ticker,
                     "name": &etf.name,
                     "instrument_type": "etf",
-                    "first_available_date": etf.first_1day_candle_date.as_ref().map(|d| d.iso_string.clone()),
+                    "first_available_date": etf.first_1day_candle_date.as_ref().map(|d| d.timestamp_utc.clone()),
                     "currency": &etf.currency,
                     "lot": etf.lot,
                 }
-            },
-            HumanInstrument::Future(future) => {
+            }
+            InstrumentEnum::Future(future) => {
                 doc! {
                     "figi": &future.figi,
                     "ticker": &future.ticker,
                     "name": &future.name,
                     "instrument_type": "future",
-                    "first_available_date": future.first_1day_candle_date.as_ref().map(|d| d.iso_string.clone()),
+                    "first_available_date": future.first_1day_candle_date.as_ref().map(|d| d.timestamp_utc.clone()),
                     "currency": &future.currency,
                     "lot": future.lot,
                 }
-            },
+            }
         };
 
         // Current time for tracking updates

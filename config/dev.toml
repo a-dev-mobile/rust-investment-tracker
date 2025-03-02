@@ -23,7 +23,7 @@ keepalive = 60 # seconds
 
 [tinkoff_instruments_updater]
 enabled = true
-interval_seconds = 605  # 1 minute for local development
+interval_seconds = 600  # 10 minute
 max_retries = 3
 retry_delay_seconds = 5
 update_start_time = "07:00"
@@ -32,7 +32,7 @@ timezone = "Europe/Moscow"
 
 [candles_tracking_updater]
 enabled = true
-interval_seconds = 600 
+interval_seconds = 605 
 max_retries = 3
 retry_delay_seconds = 5
 update_start_time = "07:00"

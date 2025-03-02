@@ -5,27 +5,26 @@ use serde::{Deserialize, Serialize};
 
 /// Human-readable Timestamp model
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HumanTimestamp {
+pub struct TimestampModel {
     pub seconds: i64,
     pub nanos: i32,
-    pub iso_string: String,
+    pub timestamp_utc: String, 
 }
 
-impl From<&Timestamp> for HumanTimestamp {
+impl From<&Timestamp> for TimestampModel {
     fn from(ts: &Timestamp) -> Self {
         let seconds = ts.seconds;
         let nanos = ts.nanos;
         
-        // Используем рекомендуемую функцию DateTime::from_timestamp
-        let iso_string = DateTime::from_timestamp(seconds, nanos as u32)
-            .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+        // Use DateTime::from_timestamp and format as proper ISO 8601 with UTC timezone
+        let timestamp_utc = DateTime::from_timestamp(seconds, nanos as u32)
+            .map(|dt| dt.to_rfc3339())  // RFC 3339 is a profile of ISO 8601 that includes the timezone
             .unwrap_or_else(|| {
-                // Для дат, которые не могут быть обработаны стандартным методом,
-                // используем альтернативный подход через TimeZone
+                // For dates that can't be processed with the standard method
                 if seconds < 0 {
-                    // Для дат до 1970 года
+                    // For dates before 1970
                     match Utc.timestamp_opt(seconds, nanos as u32) {
-                        chrono::offset::LocalResult::Single(dt) => dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        chrono::offset::LocalResult::Single(dt) => dt.to_rfc3339(),
                         _ => "Invalid date".to_string()
                     }
                 } else {
@@ -36,7 +35,7 @@ impl From<&Timestamp> for HumanTimestamp {
         Self {
             seconds,
             nanos,
-            iso_string,
+            timestamp_utc,
         }
     }
 }

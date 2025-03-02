@@ -1,15 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 use crate::features::core::models::{
-    money_value::HumanMoneyValue, real_exchange::HumanRealExchange, time_stamp::HumanTimestamp,
-    trading_status::HumanTradingStatus,
+    money_value::MoneyValueModel, real_exchange::RealExchangeModel, time_stamp::TimestampModel,
+    trading_status::TradingStatusModel,
 };
 use crate::gen::tinkoff_public_invest_api_contract_v1::Bond;
 
-use super::quotation::HumanQuotation;
+use super::quotation::QuotationModel;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HumanBond {
+pub struct BondModel {
     // Basic fields
     pub figi: String,
     pub ticker: String,
@@ -39,16 +39,16 @@ pub struct HumanBond {
     pub liquidity_flag: bool,
 
     // Enhanced enum fields
-    pub trading_status: HumanTradingStatus,
-    pub real_exchange: HumanRealExchange,
+    pub trading_status: TradingStatusModel,
+    pub real_exchange: RealExchangeModel,
 
     // Specific bond fields
     pub issue_size: i64,
     pub issue_size_plan: i64,
-    pub nominal: Option<HumanMoneyValue>,
-    pub initial_nominal: Option<HumanMoneyValue>,
-    pub placement_price: Option<HumanMoneyValue>,
-    pub aci_value: Option<HumanMoneyValue>,
+    pub nominal: Option<MoneyValueModel>,
+    pub initial_nominal: Option<MoneyValueModel>,
+    pub placement_price: Option<MoneyValueModel>,
+    pub aci_value: Option<MoneyValueModel>,
     pub country_of_risk: String,
     pub country_of_risk_name: String,
     pub sector: String,
@@ -56,26 +56,26 @@ pub struct HumanBond {
     pub coupon_quantity_per_year: i32,
 
     // Dates
-    pub maturity_date: Option<HumanTimestamp>,
-    pub state_reg_date: Option<HumanTimestamp>,
-    pub placement_date: Option<HumanTimestamp>,
-    pub first_1min_candle_date: Option<HumanTimestamp>,
-    pub first_1day_candle_date: Option<HumanTimestamp>,
+    pub maturity_date: Option<TimestampModel>,
+    pub state_reg_date: Option<TimestampModel>,
+    pub placement_date: Option<TimestampModel>,
+    pub first_1min_candle_date: Option<TimestampModel>,
+    pub first_1day_candle_date: Option<TimestampModel>,
 
     // Optional fields with enhanced types
-    pub klong: Option<HumanQuotation>,
-    pub kshort: Option<HumanQuotation>,
-    pub dlong: Option<HumanQuotation>,
-    pub dshort: Option<HumanQuotation>,
-    pub dlong_min: Option<HumanQuotation>,
-    pub dshort_min: Option<HumanQuotation>,
-    pub min_price_increment: Option<HumanQuotation>,
+    pub klong: Option<QuotationModel>,
+    pub kshort: Option<QuotationModel>,
+    pub dlong: Option<QuotationModel>,
+    pub dshort: Option<QuotationModel>,
+    pub dlong_min: Option<QuotationModel>,
+    pub dshort_min: Option<QuotationModel>,
+    pub min_price_increment: Option<QuotationModel>,
     pub risk_level: Option<String>,
 }
 
-impl From<&Bond> for HumanBond {
+impl From<&Bond> for BondModel {
     fn from(bond: &Bond) -> Self {
-        HumanBond {
+        BondModel {
             figi: bond.figi.clone(),
             ticker: bond.ticker.clone(),
             class_code: bond.class_code.clone(),
@@ -102,40 +102,40 @@ impl From<&Bond> for HumanBond {
             subordinated_flag: bond.subordinated_flag,
             liquidity_flag: bond.liquidity_flag,
 
-            trading_status: HumanTradingStatus::from(bond.trading_status),
-            real_exchange: HumanRealExchange::from(bond.real_exchange),
+            trading_status: TradingStatusModel::from(bond.trading_status),
+            real_exchange: RealExchangeModel::from(bond.real_exchange),
 
             issue_size: bond.issue_size,
             issue_size_plan: bond.issue_size_plan,
-            nominal: bond.nominal.as_ref().map(HumanMoneyValue::from),
-            initial_nominal: bond.initial_nominal.as_ref().map(HumanMoneyValue::from),
-            placement_price: bond.placement_price.as_ref().map(HumanMoneyValue::from),
-            aci_value: bond.aci_value.as_ref().map(HumanMoneyValue::from),
+            nominal: bond.nominal.as_ref().map(MoneyValueModel::from),
+            initial_nominal: bond.initial_nominal.as_ref().map(MoneyValueModel::from),
+            placement_price: bond.placement_price.as_ref().map(MoneyValueModel::from),
+            aci_value: bond.aci_value.as_ref().map(MoneyValueModel::from),
             country_of_risk: bond.country_of_risk.clone(),
             country_of_risk_name: bond.country_of_risk_name.clone(),
             sector: bond.sector.clone(),
             issue_kind: bond.issue_kind.clone(),
             coupon_quantity_per_year: bond.coupon_quantity_per_year,
 
-            maturity_date: bond.maturity_date.as_ref().map(HumanTimestamp::from),
-            state_reg_date: bond.state_reg_date.as_ref().map(HumanTimestamp::from),
-            placement_date: bond.placement_date.as_ref().map(HumanTimestamp::from),
+            maturity_date: bond.maturity_date.as_ref().map(TimestampModel::from),
+            state_reg_date: bond.state_reg_date.as_ref().map(TimestampModel::from),
+            placement_date: bond.placement_date.as_ref().map(TimestampModel::from),
             first_1min_candle_date: bond
                 .first_1min_candle_date
                 .as_ref()
-                .map(HumanTimestamp::from),
+                .map(TimestampModel::from),
             first_1day_candle_date: bond
                 .first_1day_candle_date
                 .as_ref()
-                .map(HumanTimestamp::from),
+                .map(TimestampModel::from),
 
-            klong: bond.klong.as_ref().map(HumanQuotation::from),
-            kshort: bond.kshort.as_ref().map(HumanQuotation::from),
-            dlong: bond.dlong.as_ref().map(HumanQuotation::from),
-            dshort: bond.dshort.as_ref().map(HumanQuotation::from),
-            dlong_min: bond.dlong_min.as_ref().map(HumanQuotation::from),
-            dshort_min: bond.dshort_min.as_ref().map(HumanQuotation::from),
-            min_price_increment: bond.min_price_increment.as_ref().map(HumanQuotation::from),
+            klong: bond.klong.as_ref().map(QuotationModel::from),
+            kshort: bond.kshort.as_ref().map(QuotationModel::from),
+            dlong: bond.dlong.as_ref().map(QuotationModel::from),
+            dshort: bond.dshort.as_ref().map(QuotationModel::from),
+            dlong_min: bond.dlong_min.as_ref().map(QuotationModel::from),
+            dshort_min: bond.dshort_min.as_ref().map(QuotationModel::from),
+            min_price_increment: bond.min_price_increment.as_ref().map(QuotationModel::from),
             risk_level: match bond.risk_level {
                 0 => Some("RISK_LEVEL_HIGH".to_string()),
                 1 => Some("RISK_LEVEL_MODERATE".to_string()),

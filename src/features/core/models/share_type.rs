@@ -3,12 +3,12 @@ use serde::{Deserialize, Serialize};
 use crate::gen::tinkoff_public_invest_api_contract_v1::ShareType;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HumanShareType {
+pub struct ShareTypeModel {
     pub raw: i32,
     pub name: String,
 }
 
-impl From<i32> for HumanShareType {
+impl From<i32> for ShareTypeModel {
     fn from(raw: i32) -> Self {
         let name = match raw {
             0 => "SHARE_TYPE_UNSPECIFIED",
@@ -22,7 +22,7 @@ impl From<i32> for HumanShareType {
             8 => "SHARE_TYPE_REIT",
             _ => "UNKNOWN",
         };
-        
+
         Self {
             raw,
             name: name.to_string(),
@@ -31,7 +31,7 @@ impl From<i32> for HumanShareType {
 }
 
 /// Реализация From для enum ShareType
-impl From<ShareType> for HumanShareType {
+impl From<ShareType> for ShareTypeModel {
     fn from(share_type: ShareType) -> Self {
         Self::from(share_type as i32)
     }

@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-use super::{bond::HumanBond, etf::HumanEtf, future::HumanFuture, share::HumanShare};
+use super::{bond::BondModel, etf::EtfModel, future::FutureModel, share::ShareModel};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum HumanInstrument {
-    Share(HumanShare),
-    Bond(HumanBond),
-    Etf(HumanEtf),
-    Future(HumanFuture),
+pub enum InstrumentEnum {
+    Share(ShareModel),
+    Bond(BondModel),
+    Etf(EtfModel),
+    Future(FutureModel),
 }

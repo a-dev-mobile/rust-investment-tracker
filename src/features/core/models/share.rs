@@ -2,10 +2,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::gen::tinkoff_public_invest_api_contract_v1::Share;
 
-use super::{money_value::HumanMoneyValue, quotation::HumanQuotation, real_exchange::HumanRealExchange, share_type::HumanShareType, time_stamp::HumanTimestamp, trading_status::HumanTradingStatus};
+use super::{
+    money_value::MoneyValueModel, quotation::QuotationModel, real_exchange::RealExchangeModel,
+    share_type::ShareTypeModel, time_stamp::TimestampModel, trading_status::TradingStatusModel,
+};
 /// Complete human-readable share model
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HumanShare {
+pub struct ShareModel {
     // Basic fields
     pub figi: String,
     pub ticker: String,
@@ -32,9 +35,9 @@ pub struct HumanShare {
     pub liquidity_flag: bool,
 
     // Enhanced enum fields
-    pub trading_status: HumanTradingStatus,
-    pub share_type: HumanShareType,
-    pub real_exchange: HumanRealExchange,
+    pub trading_status: TradingStatusModel,
+    pub share_type: ShareTypeModel,
+    pub real_exchange: RealExchangeModel,
 
     // Other fields
     pub issue_size: i64,
@@ -44,22 +47,22 @@ pub struct HumanShare {
     pub sector: String,
 
     // Optional fields with enhanced types
-    pub klong: Option<HumanQuotation>,
-    pub kshort: Option<HumanQuotation>,
-    pub dlong: Option<HumanQuotation>,
-    pub dshort: Option<HumanQuotation>,
-    pub dlong_min: Option<HumanQuotation>,
-    pub dshort_min: Option<HumanQuotation>,
-    pub min_price_increment: Option<HumanQuotation>,
-    pub nominal: Option<HumanMoneyValue>,
-    pub ipo_date: Option<HumanTimestamp>,
-    pub first_1min_candle_date: Option<HumanTimestamp>,
-    pub first_1day_candle_date: Option<HumanTimestamp>,
+    pub klong: Option<QuotationModel>,
+    pub kshort: Option<QuotationModel>,
+    pub dlong: Option<QuotationModel>,
+    pub dshort: Option<QuotationModel>,
+    pub dlong_min: Option<QuotationModel>,
+    pub dshort_min: Option<QuotationModel>,
+    pub min_price_increment: Option<QuotationModel>,
+    pub nominal: Option<MoneyValueModel>,
+    pub ipo_date: Option<TimestampModel>,
+    pub first_1min_candle_date: Option<TimestampModel>,
+    pub first_1day_candle_date: Option<TimestampModel>,
 }
 
-impl From<&Share> for HumanShare {
+impl From<&Share> for ShareModel {
     fn from(share: &Share) -> Self {
-        HumanShare {
+        ShareModel {
             figi: share.figi.clone(),
             ticker: share.ticker.clone(),
             class_code: share.class_code.clone(),
@@ -83,9 +86,9 @@ impl From<&Share> for HumanShare {
             blocked_tca_flag: share.blocked_tca_flag,
             liquidity_flag: share.liquidity_flag,
 
-            trading_status: HumanTradingStatus::from(share.trading_status),
-            share_type: HumanShareType::from(share.share_type),
-            real_exchange: HumanRealExchange::from(share.real_exchange),
+            trading_status: TradingStatusModel::from(share.trading_status),
+            share_type: ShareTypeModel::from(share.share_type),
+            real_exchange: RealExchangeModel::from(share.real_exchange),
 
             issue_size: share.issue_size,
             issue_size_plan: share.issue_size_plan,
@@ -93,23 +96,23 @@ impl From<&Share> for HumanShare {
             country_of_risk_name: share.country_of_risk_name.clone(),
             sector: share.sector.clone(),
 
-            klong: share.klong.as_ref().map(HumanQuotation::from),
-            kshort: share.kshort.as_ref().map(HumanQuotation::from),
-            dlong: share.dlong.as_ref().map(HumanQuotation::from),
-            dshort: share.dshort.as_ref().map(HumanQuotation::from),
-            dlong_min: share.dlong_min.as_ref().map(HumanQuotation::from),
-            dshort_min: share.dshort_min.as_ref().map(HumanQuotation::from),
-            min_price_increment: share.min_price_increment.as_ref().map(HumanQuotation::from),
-            nominal: share.nominal.as_ref().map(HumanMoneyValue::from),
-            ipo_date: share.ipo_date.as_ref().map(HumanTimestamp::from),
+            klong: share.klong.as_ref().map(QuotationModel::from),
+            kshort: share.kshort.as_ref().map(QuotationModel::from),
+            dlong: share.dlong.as_ref().map(QuotationModel::from),
+            dshort: share.dshort.as_ref().map(QuotationModel::from),
+            dlong_min: share.dlong_min.as_ref().map(QuotationModel::from),
+            dshort_min: share.dshort_min.as_ref().map(QuotationModel::from),
+            min_price_increment: share.min_price_increment.as_ref().map(QuotationModel::from),
+            nominal: share.nominal.as_ref().map(MoneyValueModel::from),
+            ipo_date: share.ipo_date.as_ref().map(TimestampModel::from),
             first_1min_candle_date: share
                 .first_1min_candle_date
                 .as_ref()
-                .map(HumanTimestamp::from),
+                .map(TimestampModel::from),
             first_1day_candle_date: share
                 .first_1day_candle_date
                 .as_ref()
-                .map(HumanTimestamp::from),
+                .map(TimestampModel::from),
         }
     }
 }

@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::features::core::models::{
-    quotation::HumanQuotation, real_exchange::HumanRealExchange, time_stamp::HumanTimestamp,
-    trading_status::HumanTradingStatus,
+    quotation::QuotationModel, real_exchange::RealExchangeModel, time_stamp::TimestampModel,
+    trading_status::TradingStatusModel,
 };
 use crate::gen::tinkoff_public_invest_api_contract_v1::Future;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HumanFuture {
+pub struct FutureModel {
     // Basic fields
     pub figi: String,
     pub ticker: String,
@@ -31,37 +31,37 @@ pub struct HumanFuture {
     pub api_trade_available_flag: bool,
 
     // Enhanced enum fields
-    pub trading_status: HumanTradingStatus,
-    pub real_exchange: HumanRealExchange,
+    pub trading_status: TradingStatusModel,
+    pub real_exchange: RealExchangeModel,
 
     // Future specific fields
-    pub first_trade_date: Option<HumanTimestamp>,
-    pub last_trade_date: Option<HumanTimestamp>,
+    pub first_trade_date: Option<TimestampModel>,
+    pub last_trade_date: Option<TimestampModel>,
     pub futures_type: String,
     pub asset_type: String,
     pub basic_asset: String,
-    pub basic_asset_size: Option<HumanQuotation>,
+    pub basic_asset_size: Option<QuotationModel>,
     pub country_of_risk: String,
     pub country_of_risk_name: String,
     pub sector: String,
-    pub expiration_date: Option<HumanTimestamp>,
+    pub expiration_date: Option<TimestampModel>,
     pub basic_asset_position_uid: String,
 
     // Optional fields with enhanced types
-    pub klong: Option<HumanQuotation>,
-    pub kshort: Option<HumanQuotation>,
-    pub dlong: Option<HumanQuotation>,
-    pub dshort: Option<HumanQuotation>,
-    pub dlong_min: Option<HumanQuotation>,
-    pub dshort_min: Option<HumanQuotation>,
-    pub min_price_increment: Option<HumanQuotation>,
-    pub first_1min_candle_date: Option<HumanTimestamp>,
-    pub first_1day_candle_date: Option<HumanTimestamp>,
+    pub klong: Option<QuotationModel>,
+    pub kshort: Option<QuotationModel>,
+    pub dlong: Option<QuotationModel>,
+    pub dshort: Option<QuotationModel>,
+    pub dlong_min: Option<QuotationModel>,
+    pub dshort_min: Option<QuotationModel>,
+    pub min_price_increment: Option<QuotationModel>,
+    pub first_1min_candle_date: Option<TimestampModel>,
+    pub first_1day_candle_date: Option<TimestampModel>,
 }
 
-impl From<&Future> for HumanFuture {
+impl From<&Future> for FutureModel {
     fn from(future: &Future) -> Self {
-        HumanFuture {
+        FutureModel {
             figi: future.figi.clone(),
             ticker: future.ticker.clone(),
             class_code: future.class_code.clone(),
@@ -82,30 +82,39 @@ impl From<&Future> for HumanFuture {
             blocked_tca_flag: future.blocked_tca_flag,
             api_trade_available_flag: future.api_trade_available_flag,
 
-            trading_status: HumanTradingStatus::from(future.trading_status),
-            real_exchange: HumanRealExchange::from(future.real_exchange),
+            trading_status: TradingStatusModel::from(future.trading_status),
+            real_exchange: RealExchangeModel::from(future.real_exchange),
 
-            first_trade_date: future.first_trade_date.as_ref().map(HumanTimestamp::from),
-            last_trade_date: future.last_trade_date.as_ref().map(HumanTimestamp::from),
+            first_trade_date: future.first_trade_date.as_ref().map(TimestampModel::from),
+            last_trade_date: future.last_trade_date.as_ref().map(TimestampModel::from),
             futures_type: future.futures_type.clone(),
             asset_type: future.asset_type.clone(),
             basic_asset: future.basic_asset.clone(),
-            basic_asset_size: future.basic_asset_size.as_ref().map(HumanQuotation::from),
+            basic_asset_size: future.basic_asset_size.as_ref().map(QuotationModel::from),
             country_of_risk: future.country_of_risk.clone(),
             country_of_risk_name: future.country_of_risk_name.clone(),
             sector: future.sector.clone(),
-            expiration_date: future.expiration_date.as_ref().map(HumanTimestamp::from),
+            expiration_date: future.expiration_date.as_ref().map(TimestampModel::from),
             basic_asset_position_uid: future.basic_asset_position_uid.clone(),
 
-            klong: future.klong.as_ref().map(HumanQuotation::from),
-            kshort: future.kshort.as_ref().map(HumanQuotation::from),
-            dlong: future.dlong.as_ref().map(HumanQuotation::from),
-            dshort: future.dshort.as_ref().map(HumanQuotation::from),
-            dlong_min: future.dlong_min.as_ref().map(HumanQuotation::from),
-            dshort_min: future.dshort_min.as_ref().map(HumanQuotation::from),
-            min_price_increment: future.min_price_increment.as_ref().map(HumanQuotation::from),
-            first_1min_candle_date: future.first_1min_candle_date.as_ref().map(HumanTimestamp::from),
-            first_1day_candle_date: future.first_1day_candle_date.as_ref().map(HumanTimestamp::from),
+            klong: future.klong.as_ref().map(QuotationModel::from),
+            kshort: future.kshort.as_ref().map(QuotationModel::from),
+            dlong: future.dlong.as_ref().map(QuotationModel::from),
+            dshort: future.dshort.as_ref().map(QuotationModel::from),
+            dlong_min: future.dlong_min.as_ref().map(QuotationModel::from),
+            dshort_min: future.dshort_min.as_ref().map(QuotationModel::from),
+            min_price_increment: future
+                .min_price_increment
+                .as_ref()
+                .map(QuotationModel::from),
+            first_1min_candle_date: future
+                .first_1min_candle_date
+                .as_ref()
+                .map(TimestampModel::from),
+            first_1day_candle_date: future
+                .first_1day_candle_date
+                .as_ref()
+                .map(TimestampModel::from),
         }
     }
 }

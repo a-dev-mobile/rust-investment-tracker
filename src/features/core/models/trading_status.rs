@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HumanTradingStatus {
+pub struct TradingStatusModel {
     pub raw: i32,
     pub value: String,
 }
 
-impl From<i32> for HumanTradingStatus {
+impl From<i32> for TradingStatusModel {
     fn from(raw: i32) -> Self {
         let value = match raw {
             0 => "UNSPECIFIED",

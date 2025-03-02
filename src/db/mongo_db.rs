@@ -60,7 +60,7 @@ impl MongoDb {
         // Ping the database to verify connection works
         match client
             .database("admin")
-            .run_command(mongodb::bson::doc! {"ping": 1})
+            .run_command(bson::doc! {"ping": 1})
             .await
         {
             Ok(_) => info!("Successfully connected to MongoDB"),

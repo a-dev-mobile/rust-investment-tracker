@@ -1,4 +1,6 @@
-use crate::features::core::models::{bond::HumanBond, etf::HumanEtf, future::HumanFuture, share::HumanShare};
+use crate::features::core::models::{
+    bond::BondModel, etf::EtfModel, future::FutureModel, share::ShareModel,
+};
 use mongodb::bson::{doc, Document};
 use tracing::error;
 
@@ -10,10 +12,10 @@ impl TinkoffInstrumentsUpdater {
         share: &crate::gen::tinkoff_public_invest_api_contract_v1::Share,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_share = HumanShare::from(share);
+        let human_share = ShareModel::from(share);
 
         // Convert to BSON Document using serde
-        match mongodb::bson::to_document(&human_share) {
+        match bson::to_document(&human_share) {
             Ok(doc) => doc,
             Err(e) => {
                 error!(
@@ -32,10 +34,10 @@ impl TinkoffInstrumentsUpdater {
         bond: &crate::gen::tinkoff_public_invest_api_contract_v1::Bond,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_bond = HumanBond::from(bond);
+        let human_bond = BondModel::from(bond);
 
         // Convert to BSON Document using serde
-        match mongodb::bson::to_document(&human_bond) {
+        match bson::to_document(&human_bond) {
             Ok(doc) => doc,
             Err(e) => {
                 error!("Failed to convert bond {} to document: {}", bond.ticker, e);
@@ -51,10 +53,10 @@ impl TinkoffInstrumentsUpdater {
         etf: &crate::gen::tinkoff_public_invest_api_contract_v1::Etf,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_etf = HumanEtf::from(etf);
+        let human_etf = EtfModel::from(etf);
 
         // Convert to BSON Document using serde
-        match mongodb::bson::to_document(&human_etf) {
+        match bson::to_document(&human_etf) {
             Ok(doc) => doc,
             Err(e) => {
                 error!("Failed to convert ETF {} to document: {}", etf.ticker, e);
@@ -69,10 +71,10 @@ impl TinkoffInstrumentsUpdater {
         future: &crate::gen::tinkoff_public_invest_api_contract_v1::Future,
     ) -> Document {
         // Convert to the human-readable model first
-        let human_future = HumanFuture::from(future);
+        let human_future = FutureModel::from(future);
 
         // Convert to BSON Document using serde
-        match mongodb::bson::to_document(&human_future) {
+        match bson::to_document(&human_future) {
             Ok(doc) => doc,
             Err(e) => {
                 error!(
