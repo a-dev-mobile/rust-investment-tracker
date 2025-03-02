@@ -9,13 +9,14 @@ pub struct DbNames;
 impl DbNames {
     pub const MARKET_DATA: &'static str = "market_data";
     pub const MARKET_SERVICES: &'static str = "market_services";
-    pub const USER_BOT_CONFIG: &'static str = "user_bot_config";
+    pub const USER_CONFIG: &'static str = "user_config";
 }
 
 // Collection names constant
 pub struct Collections;
 impl Collections {
     // Market data collections
+    pub const WATCHLISTS: &'static str = "watchlists";
     pub const TINKOFF_SHARES: &'static str = "tinkoff_shares";
     pub const TINKOFF_BONDS: &'static str = "tinkoff_bonds";
     pub const TINKOFF_ETFS: &'static str = "tinkoff_etfs";

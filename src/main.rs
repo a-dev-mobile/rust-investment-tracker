@@ -10,7 +10,7 @@ use env_config::models::{
     app_env::{AppEnv, Env},
     app_setting::AppSettings,
 };
-use features::candles_tracking::CandlesTrackingUpdater;
+use features::{candles_tracking::CandlesTrackingUpdater, user_config::watchlists::WatchlistService};
 use features::market_data_updater::TinkoffInstrumentsUpdater;
 
 use services::tinkoff::client_grpc::TinkoffClient;
@@ -176,6 +176,11 @@ async fn main() {
         tinkoff_client.clone(),
     )
     .await;
+
+    let watchlist_service = Arc::new(WatchlistService::new(mongodb_arc.clone()));
+
+let a = watchlist_service.get_watchlists().await.unwrap();
+
     // Start HTTP server
     run_server(app, http_addr).await;
 }

@@ -22,12 +22,28 @@ keepalive = 60 # seconds
 
 [tinkoff_market_data_updater]
 enabled = true
-interval_seconds = 10  # 1 minute for local development
+interval_seconds = 100  # 1 minute for local development
 max_retries = 3
 retry_delay_seconds = 5
 update_start_time = "00:00"
 update_end_time = "23:59"
 timezone = "Europe/Moscow"
+
+
+
+
+
+
+
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+
+
 
 [candles_tracking_updater]
 enabled = true

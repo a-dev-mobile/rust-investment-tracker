@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use std::fmt;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppEnv {
@@ -31,13 +32,16 @@ impl FromStr for Env {
     }
 }
 
-impl ToString for Env {
-    fn to_string(&self) -> String {
-        match self {
-            Env::Local => "local".to_string(),
-            Env::Development => "dev".to_string(),
-            Env::Production => "prod".to_string(),
-        }
+
+
+impl fmt::Display for Env {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Env::Local => "local",
+            Env::Development => "dev",
+            Env::Production => "prod",
+        };
+        write!(f, "{}", s)
     }
 }
 impl Env {
