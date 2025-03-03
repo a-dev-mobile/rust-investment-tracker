@@ -1,12 +1,10 @@
-use crate::features::moex_api::models::{
-    CurrencyDisplayInfo, CurrencyInfo, CurrencyRatesResponse, ExchangeRateInfo, MoexRatesResponse,
-    RateChange, RateInfo,
+use crate::features::moex_api::models::{MoexRatesResponse};
+use crate::features::market_reference::currency_rates::models::{
+    CurrencyDisplayInfo, CurrencyInfo, CurrencyRatesResponse, ExchangeRateInfo,
+    RateChange, RateInfo, TradingVolume, WapRateInfo
 };
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use std::collections::HashMap;
 use tracing::{info, warn};
-
-use super::models::{TradingVolume, WapRateInfo};
 
 pub struct MoexRatesMapper;
 
@@ -61,8 +59,8 @@ impl MoexRatesMapper {
     ];
 
     pub fn map_to_currency_rates(
-        response: MoexRatesResponse,
-    ) -> Result<CurrencyRatesResponse, Box<dyn std::error::Error>> {
+        response: &MoexRatesResponse,
+    ) -> Result<CurrencyRatesResponse, Box<dyn std::error::Error + Send + Sync>>  {
         let mut currencies = HashMap::new();
         let mut display_info = HashMap::new();
 
@@ -128,7 +126,7 @@ impl MoexRatesMapper {
         wap_indices: &HashMap<&str, usize>,
         currencies: &mut HashMap<String, CurrencyInfo>,
         display_info: &mut HashMap<String, CurrencyDisplayInfo>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>>  {
         let mut central_bank = None;
         let mut exchange = None;
         let mut wap_rate = None;

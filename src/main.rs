@@ -11,14 +11,16 @@ use env_config::models::{
     app_setting::AppSettings,
 };
 use features::{
-    candles_tracking::CandlesTrackingUpdater, moex_api::MoexApiService,
+
+    market_reference::currency_rates::CurrencyRatesUpdater, moex_api::MoexApiClient,
     user_config::watchlists::WatchlistService,
 };
 use features::{
-    market_data_updater::TinkoffInstrumentsUpdater,
-    moex_api::{CurrencyRatesRepository, CurrencyRatesUpdater},
+    market_data::TinkoffInstrumentsUpdater,
+    market_reference::currency_rates::CurrencyRatesRepository,
 };
 
+use futures::future::BoxFuture;
 use services::tinkoff::client_grpc::TinkoffClient;
 use sqlx::PgPool;
 
@@ -104,17 +106,7 @@ pub async fn start_tinkoff_market_data_updater(
         updater.start_update_loop().await;
     });
 }
-pub async fn start_candles_tracking_updater(
-    postgres_db: Arc<PgPool>,
-    mongo_db: Arc<MongoDb>,
-    settings: Arc<AppSettings>,
-    client: Arc<TinkoffClient>,
-) {
-    let updater = CandlesTrackingUpdater::new(postgres_db, mongo_db, settings, client).await;
-    tokio::spawn(async move {
-        updater.start_update_loop().await;
-    });
-}
+
 /// Start the HTTP server
 async fn run_server(app: Router, addr: SocketAddr) {
     tracing::info!("Starting server on {}", addr);
@@ -175,57 +167,30 @@ async fn main() {
     )
     .await;
 
-    start_candles_tracking_updater(
-        db_pool.clone(),
-        mongodb_arc.clone(),
-        settings.clone(),
-        tinkoff_client.clone(),
-    )
-    .await;
+
 
     let watchlist_service = Arc::new(WatchlistService::new(mongodb_arc.clone()));
 
     let a = watchlist_service.get_watchlists().await.unwrap();
 
-    // Инициализация сервисов для работы с курсами валют
-    let moex_api_service = MoexApiService::new();
-    let currency_repository = Arc::new(CurrencyRatesRepository::new(mongodb_arc.clone()));
-    let currency_updater = CurrencyRatesUpdater::new(moex_api_service, currency_repository.clone());
-
-    // Запуск фонового процесса для периодического обновления курсов валют
-    tokio::spawn(async move {
-        currency_updater.start_update_loop().await;
-    });
-
-      // Обновление курсов валют при запуске и вывод информации
-    // match currency_updater.update_currency_rates().await {
-    //     Ok(rates) => {
-    //         println!("Курсы валют обновлены. Дата: {}", rates.date);
-            
-    //         // Вывод информации о курсах в консоль
-    //         for (code, info) in rates.display_info {
-    //             println!("{}: {} ({})", code, info.text, info.change_text);
-    //         }
-    //     }
-    //     Err(e) => {
-    //         eprintln!("Ошибка при обновлении курсов валют: {}", e);
-    //     }
-    // }
-    
-    // Тестовый пример получения курсов из базы данных
-    // match currency_repository.get_latest_currency_rates().await {
-    //     Ok(Some(rates)) => {
-    //         println!("Последние курсы валют из БД: {}", rates.date);
-    //     }
-    //     Ok(None) => {
-    //         println!("Курсы валют в БД пока отсутствуют");
-    //     }
-    //     Err(e) => {
-    //         eprintln!("Ошибка при получении курсов валют из БД: {}", e);
-    //     }
-    // }
-
+    start_currency_rates_updater(mongodb_arc.clone(), settings.clone()).await;
 
     // Start HTTP server
     run_server(app, http_addr).await;
+}
+
+async fn start_currency_rates_updater(mongo_db: Arc<MongoDb>, settings: Arc<AppSettings>) {
+    // Инициализация API клиента
+    let api_client = MoexApiClient::new();
+
+    // Инициализация репозитория
+    let repository = Arc::new(CurrencyRatesRepository::new(mongo_db.clone()));
+
+    // Создаем и запускаем планировщик обновлений с настройками
+    let updater = CurrencyRatesUpdater::new(api_client, repository, settings);
+
+    // Запускаем планировщик в отдельной задаче
+    tokio::spawn(async move {
+        updater.start_update_loop().await;
+    });
 }
