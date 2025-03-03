@@ -10,6 +10,7 @@ impl DbNames {
     pub const MARKET_DATA: &'static str = "market_data";
     pub const MARKET_SERVICES: &'static str = "market_services";
     pub const USER_CONFIG: &'static str = "user_config";
+    pub const MARKET_REFERENCE: &'static str = "market_reference";
 }
 
 // Collection names constant
@@ -22,6 +23,7 @@ impl Collections {
     pub const TINKOFF_ETFS: &'static str = "tinkoff_etfs";
     pub const TINKOFF_FUTURES: &'static str = "tinkoff_futures";
     pub const STATUS: &'static str = "_status";
+    pub const CURRENCY_RATES: &'static str = "currency_rates";
 
     pub const CANDLES_TRACKING: &'static str = "candles_tracking";
 }

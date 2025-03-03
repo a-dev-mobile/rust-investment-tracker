@@ -10,8 +10,14 @@ use env_config::models::{
     app_env::{AppEnv, Env},
     app_setting::AppSettings,
 };
-use features::{candles_tracking::CandlesTrackingUpdater, user_config::watchlists::WatchlistService};
-use features::market_data_updater::TinkoffInstrumentsUpdater;
+use features::{
+    candles_tracking::CandlesTrackingUpdater, moex_api::MoexApiService,
+    user_config::watchlists::WatchlistService,
+};
+use features::{
+    market_data_updater::TinkoffInstrumentsUpdater,
+    moex_api::{CurrencyRatesRepository, CurrencyRatesUpdater},
+};
 
 use services::tinkoff::client_grpc::TinkoffClient;
 use sqlx::PgPool;
@@ -179,7 +185,46 @@ async fn main() {
 
     let watchlist_service = Arc::new(WatchlistService::new(mongodb_arc.clone()));
 
-let a = watchlist_service.get_watchlists().await.unwrap();
+    let a = watchlist_service.get_watchlists().await.unwrap();
+
+    // Инициализация сервисов для работы с курсами валют
+    let moex_api_service = MoexApiService::new();
+    let currency_repository = Arc::new(CurrencyRatesRepository::new(mongodb_arc.clone()));
+    let currency_updater = CurrencyRatesUpdater::new(moex_api_service, currency_repository.clone());
+
+    // Запуск фонового процесса для периодического обновления курсов валют
+    tokio::spawn(async move {
+        currency_updater.start_update_loop().await;
+    });
+
+      // Обновление курсов валют при запуске и вывод информации
+    // match currency_updater.update_currency_rates().await {
+    //     Ok(rates) => {
+    //         println!("Курсы валют обновлены. Дата: {}", rates.date);
+            
+    //         // Вывод информации о курсах в консоль
+    //         for (code, info) in rates.display_info {
+    //             println!("{}: {} ({})", code, info.text, info.change_text);
+    //         }
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Ошибка при обновлении курсов валют: {}", e);
+    //     }
+    // }
+    
+    // Тестовый пример получения курсов из базы данных
+    // match currency_repository.get_latest_currency_rates().await {
+    //     Ok(Some(rates)) => {
+    //         println!("Последние курсы валют из БД: {}", rates.date);
+    //     }
+    //     Ok(None) => {
+    //         println!("Курсы валют в БД пока отсутствуют");
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Ошибка при получении курсов валют из БД: {}", e);
+    //     }
+    // }
+
 
     // Start HTTP server
     run_server(app, http_addr).await;
