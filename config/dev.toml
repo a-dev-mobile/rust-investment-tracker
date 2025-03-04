@@ -23,7 +23,16 @@ keepalive = 60 # seconds
 
 [tinkoff_market_data_updater]
 enabled = true
-interval_seconds = 60  # 1 minute
+interval_seconds = 60  # 
+max_retries = 3
+retry_delay_seconds = 5
+update_start_time = "07:00"
+update_end_time = "23:59"
+timezone = "Europe/Moscow"
+
+[tinkoff_market_data_stream]
+enabled = false
+interval_seconds = 0  
 max_retries = 3
 retry_delay_seconds = 5
 update_start_time = "07:00"

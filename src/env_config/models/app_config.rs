@@ -8,13 +8,14 @@ pub struct AppConfig {
     pub postgres_db: PostgresDbConfig,
     pub mongo_db: MongoDbConfig,
     pub tinkoff_api: TinkoffApiConfig,
-    pub tinkoff_market_data_updater: TinkoffMarketDataUpdaterConfig,
-    pub currency_rates_updater: CurrencyRatesUpdaterConfig,
-
+    pub tinkoff_market_data_updater: UpdaterConfig,
+    pub tinkoff_market_data_stream: UpdaterConfig,
+    pub currency_rates_updater: UpdaterConfig,
+    pub historical_candle_data: HistoricalCandleDataConfig,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TinkoffMarketDataUpdaterConfig {
+pub struct UpdaterConfig {
     pub enabled: bool,
     pub interval_seconds: u64,
     pub max_retries: u32,
@@ -23,7 +24,6 @@ pub struct TinkoffMarketDataUpdaterConfig {
     pub update_end_time: String,
     pub timezone: String,
 }
-
 
 #[derive(Debug, Deserialize)]
 pub struct LogConfig {
@@ -54,18 +54,14 @@ pub struct TinkoffApiConfig {
     pub timeout: u64,
     pub keepalive: u64,
 }
-#[derive(Debug, Deserialize)]
-pub struct CurrencyRatesUpdaterConfig {
-    pub enabled: bool,
-    pub interval_seconds: u64,
-    pub max_retries: u32,
-    pub retry_delay_seconds: u64,
-    pub update_start_time: String,
-    pub update_end_time: String,
-    pub timezone: String,
-}
 
-impl TinkoffMarketDataUpdaterConfig {
+#[derive(Debug, Deserialize)]
+pub struct HistoricalCandleDataConfig {
+    pub enabled: bool,
+    pub max_days_history: u32,
+    pub request_delay_ms: u64,
+}
+impl UpdaterConfig {
     pub fn is_update_time(&self) -> bool {
         // Парсим временную зону
         let timezone: Tz = self.timezone.parse().expect("Invalid timezone");
@@ -77,33 +73,11 @@ impl TinkoffMarketDataUpdaterConfig {
             .expect("Invalid update_start_time format");
         let end_time = NaiveTime::parse_from_str(&self.update_end_time, "%H:%M")
             .expect("Invalid update_end_time format");
-
+        
         if start_time <= end_time {
             current_time >= start_time && current_time <= end_time
         } else {
             // Обработка случая, когда период обновления пересекает полночь
-            current_time >= start_time || current_time <= end_time
-        }
-    }
-}
-// Implementation similar to other updater configs
-impl CurrencyRatesUpdaterConfig {
-    pub fn is_update_time(&self) -> bool {
-        // Parse the timezone
-        let timezone: Tz = self.timezone.parse().expect("Invalid timezone");
-
-        // Get the current time in UTC and convert to the specified timezone
-        let current_time = Utc::now().with_timezone(&timezone).time();
-
-        let start_time = NaiveTime::parse_from_str(&self.update_start_time, "%H:%M")
-            .expect("Invalid update_start_time format");
-        let end_time = NaiveTime::parse_from_str(&self.update_end_time, "%H:%M")
-            .expect("Invalid update_end_time format");
-
-        if start_time <= end_time {
-            current_time >= start_time && current_time <= end_time
-        } else {
-            // Handle case when update period crosses midnight
             current_time >= start_time || current_time <= end_time
         }
     }
