@@ -23,7 +23,7 @@ keepalive = 60 # seconds
 
 [tinkoff_market_data_updater]
 enabled = true
-interval_seconds = 60  # 
+interval_seconds = 600
 max_retries = 3
 retry_delay_seconds = 5
 update_start_time = "07:00"
@@ -42,7 +42,7 @@ timezone = "Europe/Moscow"
 
 [currency_rates_updater]
 enabled = true
-interval_seconds = 60  # 1 min
+interval_seconds = 600 
 max_retries = 3
 retry_delay_seconds = 5
 update_start_time = "07:00"
@@ -51,3 +51,7 @@ timezone = "Europe/Moscow"
 
 
 
+[historical_candle_data]
+enabled = false
+max_days_history = 20     # How many days of history to keep
+request_delay_ms = 200       # Delay between API requests to avoid rate limiting
