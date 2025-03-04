@@ -9,6 +9,7 @@ use env_config::models::{
     app_env::{AppEnv, Env},
     app_setting::AppSettings,
 };
+use features::market_candles::tinkoff_shares_1m_historical::scheduler::initialize_historical_candle_services;
 use features::{
     db::{mongo_extensions::watchlists::models::DbUserConfigWatchlist, MongoDb},
     market_candles::tinkoff_shares_1m_historical::{
@@ -167,16 +168,13 @@ async fn main() {
 
     start_currency_rates_updater(mongodb_arc.clone(), settings.clone()).await;
 
-    // In the main function, after initializing other services
-    // Add this after initializing the watchlist_service
-    let historical_candle_service = Arc::new(HistoricalCandleDataService::new(
+    // Initialize historical candle services (both one-time loader and periodic updater)
+    initialize_historical_candle_services(
         tinkoff_client.clone(),
         mongodb_arc.clone(),
         settings.clone(),
-    ));
-
-    // Start the historical candle data service
-    start_historical_candle_service(historical_candle_service).await;
+    )
+    .await;
 
     // Start HTTP server
     run_server(app, http_addr).await;

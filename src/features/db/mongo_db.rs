@@ -97,9 +97,14 @@ impl MongoDb {
             .collection(Collections::TINKOFF_BONDS)
     }
 
-    pub fn status_collection(&self) -> Collection<Document> {
+    pub fn market_data_status_collection(&self) -> Collection<Document> {
         self.client
             .database(DbNames::MARKET_DATA)
+            .collection(Collections::STATUS)
+    }
+    pub fn market_candles_status_collection(&self) -> Collection<Document> {
+        self.client
+            .database(DbNames::MARKET_CANDLES)
             .collection(Collections::STATUS)
     }
     pub fn etfs_collection(&self) -> Collection<Document> {
@@ -123,4 +128,6 @@ impl MongoDb {
             .database(DbNames::MARKET_CANDLES)
             .collection::<Document>(Collections::TINKOFF_1M_SHARES_1M_HISTORICAL)
     }
+
+    
 }

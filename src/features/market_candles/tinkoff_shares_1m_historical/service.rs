@@ -14,9 +14,9 @@ use std::sync::Arc;
 use tracing::{error, info, warn};
 
 pub struct HistoricalCandleDataService {
-    client: Arc<TinkoffClient>,
-    mongo_db: Arc<MongoDb>,
-    settings: Arc<AppSettings>,
+    pub(crate) client: Arc<TinkoffClient>,
+    pub(crate) mongo_db: Arc<MongoDb>,
+    pub(crate) settings: Arc<AppSettings>,
 }
 
 impl HistoricalCandleDataService {
@@ -32,6 +32,41 @@ impl HistoricalCandleDataService {
         }
     }
 
+    async fn initialize_status_collection(&self) {
+        info!("Initializing historical candle status collection");
+        
+        let status_collection = self.mongo_db.market_candles_status_collection();
+        
+        // Проверяем, есть ли документы в коллекции
+        let count = match status_collection.count_documents(doc! {}).await {
+            Ok(count) => count,
+            Err(e) => {
+                error!("Failed to count documents in status collection: {}", e);
+                0
+            }
+        };
+        
+        if count == 0 {
+            info!("Status collection is empty, creating initial status document");
+            
+            // Создаем начальный документ статуса
+            let initial_status = doc! {
+                "_id": "system_status",
+                "initialized": true,
+                "last_initialized": chrono::Utc::now().to_rfc3339(),
+                "version": "1.0"
+            };
+            
+            // Вставляем начальный документ
+            match status_collection.insert_one(initial_status ).await {
+                Ok(_) => info!("Initial status document created successfully"),
+                Err(e) => error!("Failed to create initial status document: {}", e)
+            }
+        } else {
+            info!("Status collection already contains {} documents", count);
+        }
+    }
+  
     pub async fn start(&self) {
         info!("Starting historical candle data service");
 
@@ -41,11 +76,10 @@ impl HistoricalCandleDataService {
             return;
         }
 
-        // Ensure collection with proper indexes exists
-        self.ensure_collection_setup().await;
-
-        // Очистка коллекции перед запуском
-        self.clear_historical_collection().await;
+        // Initialize status collection
+        self.initialize_status_collection().await;
+        // Initialize indexes on the status collection
+        self.ensure_status_collection_indexes().await;
 
         // Сразу определяем период для запроса на основе max_days_history
         let (start_date, end_date) = self.calculate_fetch_period();
@@ -78,16 +112,20 @@ impl HistoricalCandleDataService {
 
         // Process each instrument
         for (idx, figi) in figis.iter().enumerate() {
-            let progress_pct = (idx * 100) / total_figis;
-            let elapsed_figis = idx;
-            let remaining_figis = total_figis - idx;
-            
+            // Простой прогресс
             info!(
-                "Progress: {}/{} FIGI processed ({}%) - {} remaining",
-                elapsed_figis, total_figis, progress_pct, remaining_figis
+                "Progress: {}/{}",
+                idx + 1, total_figis
             );
             
             info!("Processing historical data for {}", figi);
+
+            // Check if we already have data for this FIGI and date range
+            let should_fetch = self.check_historical_data_needed(figi, start_date, end_date).await;
+            if !should_fetch && !self.settings.app_config.historical_candle_data.force_update {
+                info!("Skipping {} - already have data for the requested period", figi);
+                continue;
+            }
 
             info!(
                 "Fetching historical data for {} from {} to {}",
@@ -99,83 +137,31 @@ impl HistoricalCandleDataService {
             // Fetch data day by day
             self.fetch_historical_data_by_day(&figi, start_date, end_date)
                 .await;
+                
+            // Update status after fetching
+            if let Err(e) = self.update_candle_history_status(figi).await {
+                error!("Failed to update candle history status for {}: {}", figi, e);
+            }
         }
 
         info!("Historical candle data service completed");
     }
 
-    // Метод для очистки коллекции исторических данных
-    async fn clear_historical_collection(&self) {
-        info!("Clearing historical candles collection before starting data collection");
+    async fn ensure_status_collection_indexes(&self) {
+        let status_collection = self.mongo_db.market_candles_status_collection();
         
-        let collection = self.mongo_db.get_historical_collection();
-        
-        match collection.delete_many(doc! {}).await {
-            Ok(result) => {
-                info!("Deleted {} documents from historical candles collection", result.deleted_count);
-            },
-            Err(e) => {
-                error!("Failed to clear historical candles collection: {}", e);
-            }
-        }
-    }
-
-    async fn ensure_collection_setup(&self) {
-        // Используем новое имя коллекции
-        let collection = self.mongo_db.get_historical_collection();
-
-        // Create compound index on figi + time.seconds for efficient queries
-        let index_options = IndexOptions::builder().unique(false).build();
-        let index_model = mongodb::IndexModel::builder()
-            .keys(doc! {
-                "figi": 1,
-                "time.seconds": 1
-            })
-            .options(index_options)
-            .build();
-
-        match collection.create_index(index_model).await {
-            Ok(result) => info!(
-                "Ensured index {} on historical candles collection",
-                result.index_name
-            ),
-            Err(e) => error!(
-                "Failed to create index on historical candles collection: {}",
-                e
-            ),
-        }
-    }
-
-    async fn get_last_historical_date(&self, figi: &str) -> chrono::DateTime<Utc> {
-        // Используем новое имя коллекции
-        let collection = self.mongo_db.get_historical_collection();
-
-        // Query for the most recent record for this figi
-        let filter = doc! { "figi": figi };
-        let options = FindOptions::builder()
-            .sort(doc! { "time.seconds": -1 })
-            .limit(1)
-            .build();
-
-        match collection.find(filter).with_options(options).await {
-            Ok(mut cursor) => {
-                if let Ok(Some(doc)) = cursor.try_next().await {
-                    if let Ok(time_doc) = doc.get_document("time") {
-                        if let (Ok(seconds), Ok(nanos)) =
-                            (time_doc.get_i64("seconds"), time_doc.get_i32("nanos"))
-                        {
-                            return Utc.timestamp_opt(seconds, nanos as u32).unwrap();
-                        }
-                    }
-                }
-                // If no records found or couldn't parse, return a default date (30 days ago)
-                Utc::now() - Duration::days(30)
-            }
-            Err(e) => {
-                warn!("Failed to query last historical date for {}: {}", figi, e);
-                // Return a default date (30 days ago)
-                Utc::now() - Duration::days(30)
-            }
+        // Create index on FIGI for quick lookups
+        match status_collection
+            .create_index(
+                mongodb::IndexModel::builder()
+                    .keys(doc! { "figi": 1 })
+                    .options(IndexOptions::builder().unique(true).build())
+                    .build(),
+            )
+            .await
+        {
+            Ok(_) => info!("Created FIGI index for candle history status collection"),
+            Err(e) => error!("Failed to create FIGI index for status collection: {}", e),
         }
     }
 
@@ -210,10 +196,43 @@ impl HistoricalCandleDataService {
     async fn fetch_historical_data_by_day(
         &self,
         figi: &str,
-        start_date: chrono::DateTime<Utc>,
+    mut start_date: chrono::DateTime<Utc>,
         end_date: chrono::DateTime<Utc>,
     ) {
         let collection = self.mongo_db.get_historical_collection();
+    // Check if we already have some data for this FIGI
+    if let Some(status) = self.get_candle_history_status(figi).await {
+        // If we already have data, we can optimize by only fetching what we're missing
+        
+        // If our existing data starts earlier than requested start_date, 
+        // we can start from the day after our existing latest data
+        if status.first_candle_date_seconds <= start_date.timestamp() {
+            let existing_end = Utc.timestamp_opt(status.last_candle_date_seconds, 0).unwrap();
+            
+            // Start from the day after our existing latest data
+            start_date = (existing_end + Duration::days(1))
+                .date()
+                .and_hms_opt(0, 0, 0)
+                .unwrap()
+                .with_timezone(&Utc);
+            
+            info!(
+                "Optimizing fetch for {}: Starting from {} (after existing data end)",
+                figi,
+                start_date.format("%Y-%m-%d")
+            );
+            
+            // If optimized start_date is already beyond our end_date, we have nothing to fetch
+            if start_date >= end_date {
+                info!(
+                    "No new data needed for {}: already have data up to {}",
+                    figi,
+                    existing_end.format("%Y-%m-%d")
+                );
+                return;
+            }
+        }
+    }
         let mut current_date = start_date;
 
         // Process one day at a time
@@ -336,7 +355,7 @@ impl HistoricalCandleDataService {
         doc! {
             "figi": figi,
             "volume": candle.volume,
-            "moscow_time": moscow_time_str,
+            "display_time": moscow_time_str,
             "open": {
                 "units": candle.open.as_ref().map_or(0, |q| q.units),
                 "nano": candle.open.as_ref().map_or(0, |q| q.nano)

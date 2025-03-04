@@ -20,7 +20,6 @@ domain = "invest-public-api.tinkoff.ru"
 timeout = 30   # seconds
 keepalive = 60 # seconds
 
-
 [tinkoff_market_data_updater]
 enabled = true
 interval_seconds = 600
@@ -29,7 +28,6 @@ retry_delay_seconds = 5
 update_start_time = "07:00"
 update_end_time = "23:59"
 timezone = "Europe/Moscow"
-
 
 [currency_rates_updater]
 enabled = true
@@ -49,12 +47,18 @@ update_start_time = "07:00"
 update_end_time = "23:59"
 timezone = "Europe/Moscow"
 
-
-
-
-
-
 [historical_candle_data]
-enabled = true
-max_days_history = 3     # How many days of history to keep
-request_delay_ms = 200      # Delay between API requests to avoid rate limiting
+enabled = true                # Включить/выключить сервис загрузки исторических свечей
+max_days_history = 180          # Количество дней истории для загрузки 
+request_delay_ms = 200        # Задержка между API запросами в мс (для избежания лимитов API)
+run_on_startup = false        # НЕ запускать загрузку данных при старте в dev-окружении
+force_update = false          # Не обновлять данные принудительно
+
+[historical_candle_updater]
+enabled = true                # Включить/выключить сервис периодического обновления
+max_retries = 3               # Максимальное количество попыток при ошибке
+retry_delay_seconds = 60      # Задержка между повторными попытками в секундах
+update_start_time = "00:01"   # Время начала обновления (по Московскому времени)
+update_end_time = "23:59"     # Время окончания обновления (по Московскому времени)
+timezone = "Europe/Moscow"    # Часовой пояс для расписания обновления
+run_on_startup = false         # Запускать обновление при старте (для тестирования в dev-окружении)

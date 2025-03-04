@@ -12,6 +12,7 @@ pub struct AppConfig {
     pub tinkoff_market_data_stream: UpdaterConfig,
     pub currency_rates_updater: UpdaterConfig,
     pub historical_candle_data: HistoricalCandleDataConfig,
+    pub historical_candle_updater: HistoricalCandleUpdaterConfig,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,7 +61,26 @@ pub struct HistoricalCandleDataConfig {
     pub enabled: bool,
     pub max_days_history: u32,
     pub request_delay_ms: u64,
+    pub run_on_startup: bool,
+    #[serde(default = "default_false")]
+    pub force_update: bool,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct HistoricalCandleUpdaterConfig {
+    pub enabled: bool,
+    pub max_retries: u32,
+    pub retry_delay_seconds: u64,
+    pub update_start_time: String,
+    pub update_end_time: String,
+    pub timezone: String,
+    pub run_on_startup: bool,
+}
+
+fn default_false() -> bool {
+    false
+}
+
 impl UpdaterConfig {
     pub fn is_update_time(&self) -> bool {
         // Парсим временную зону

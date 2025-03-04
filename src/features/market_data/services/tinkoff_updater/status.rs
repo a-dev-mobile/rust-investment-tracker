@@ -14,10 +14,7 @@ fn to_human_readable(rfc3339_time: &str) -> String {
             let moscow_offset = FixedOffset::east_opt(3 * 3600).unwrap();
             let moscow_time = utc_time.with_timezone(&moscow_offset);
 
-
-            moscow_time
-                .format("%d.%m.%Y %H:%M:%S")
-                .to_string()
+            moscow_time.format("%d.%m.%Y %H:%M:%S").to_string()
         }
         Err(_) => format!("Invalid time format: {}", rfc3339_time),
     }
@@ -32,8 +29,7 @@ impl TinkoffInstrumentsUpdater {
         collection_name: &str,
         status: &str,
     ) -> Result<(), mongodb::error::Error> {
-
-        let status_collection = self.mongo_db.status_collection();
+        let status_collection = self.mongo_db.market_data_status_collection();
         let rfc3339_now = Utc::now().to_rfc3339();
         let moscow_readable = to_human_readable(&rfc3339_now);
 
