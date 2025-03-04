@@ -58,13 +58,35 @@ impl HistoricalCandleDataService {
             return;
         }
 
+        let total_figis = figis.len();
         info!(
             "Found {} unique FIGI for historical data fetch",
-            figis.len()
+            total_figis
+        );
+        
+        // Расчет примерного времени
+        let total_requests = total_figis * self.settings.app_config.historical_candle_data.max_days_history as usize;
+        let estimated_time_seconds = (total_requests as u64 * self.settings.app_config.historical_candle_data.request_delay_ms) / 1000;
+        let estimated_hours = estimated_time_seconds / 3600;
+        let estimated_minutes = (estimated_time_seconds % 3600) / 60;
+        let estimated_seconds = estimated_time_seconds % 60;
+        
+        info!(
+            "Estimated completion time: ~{:02}:{:02}:{:02} (hh:mm:ss), total requests: {}",
+            estimated_hours, estimated_minutes, estimated_seconds, total_requests
         );
 
         // Process each instrument
-        for figi in figis {
+        for (idx, figi) in figis.iter().enumerate() {
+            let progress_pct = (idx * 100) / total_figis;
+            let elapsed_figis = idx;
+            let remaining_figis = total_figis - idx;
+            
+            info!(
+                "Progress: {}/{} FIGI processed ({}%) - {} remaining",
+                elapsed_figis, total_figis, progress_pct, remaining_figis
+            );
+            
             info!("Processing historical data for {}", figi);
 
             info!(
