@@ -30,15 +30,6 @@ update_start_time = "07:00"
 update_end_time = "23:59"
 timezone = "Europe/Moscow"
 
-[tinkoff_market_data_stream]
-enabled = false
-interval_seconds = 0  
-max_retries = 3
-retry_delay_seconds = 5
-update_start_time = "07:00"
-update_end_time = "23:59"
-timezone = "Europe/Moscow"
-
 
 [currency_rates_updater]
 enabled = true
@@ -49,9 +40,21 @@ update_start_time = "07:00"
 update_end_time = "23:59"
 timezone = "Europe/Moscow"
 
+[tinkoff_market_data_stream]
+enabled = false
+interval_seconds = 0  
+max_retries = 3
+retry_delay_seconds = 5
+update_start_time = "07:00"
+update_end_time = "23:59"
+timezone = "Europe/Moscow"
+
+
+
+
 
 
 [historical_candle_data]
-enabled = false
-max_days_history = 20     # How many days of history to keep
-request_delay_ms = 200       # Delay between API requests to avoid rate limiting
+enabled = true
+max_days_history = 3     # How many days of history to keep
+request_delay_ms = 200      # Delay between API requests to avoid rate limiting

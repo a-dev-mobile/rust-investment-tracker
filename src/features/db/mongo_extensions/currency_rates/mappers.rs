@@ -1,10 +1,11 @@
-use crate::features::moex_api::models::{MoexRatesResponse};
-use crate::features::market_reference::currency_rates::models::{
-    CurrencyDisplayInfo, CurrencyInfo, CurrencyRatesResponse, ExchangeRateInfo,
-    RateChange, RateInfo, TradingVolume, WapRateInfo
-};
+
+
+use crate::features::moex_api::models::MoexRatesResponse;
+
 use std::collections::HashMap;
 use tracing::{info, warn};
+
+use super::models::{CurrencyDisplayInfo, CurrencyInfo, CurrencyRatesResponse, ExchangeRateInfo, RateChange, RateInfo, TradingVolume, WapRateInfo};
 
 pub struct MoexRatesMapper;
 

@@ -44,35 +44,28 @@ impl HistoricalCandleDataService {
         // Ensure collection with proper indexes exists
         self.ensure_collection_setup().await;
 
-        // Get list of watchlisted instruments directly from MongoDB
-        let watchlists = self.mongo_db.get_enabled_watchlists().await;
+        // Очистка коллекции перед запуском
+        self.clear_historical_collection().await;
 
-        if watchlists.is_empty() {
-            info!("No enabled instruments found in watchlists");
+        // Сразу определяем период для запроса на основе max_days_history
+        let (start_date, end_date) = self.calculate_fetch_period();
+
+        // Получение всех уникальных FIGI из коллекции tinkoff_shares
+        let figis = self.mongo_db.get_unique_figis().await;
+
+        if figis.is_empty() {
+            info!("No FIGI found in tinkoff_shares collection");
             return;
         }
 
         info!(
-            "Found {} instruments for historical data fetch",
-            watchlists.len()
+            "Found {} unique FIGI for historical data fetch",
+            figis.len()
         );
 
         // Process each instrument
-        for watchlist in watchlists {
-            let figi = watchlist.figi.clone();
+        for figi in figis {
             info!("Processing historical data for {}", figi);
-
-            // Get the last date we have historical data for
-            let last_date = self.get_last_historical_date(&figi).await;
-
-            // Calculate the start and end dates for our historical data fetch
-            let (start_date, end_date) = self.calculate_fetch_period(last_date);
-
-            // Skip if we're already up to date
-            if start_date >= end_date {
-                info!("Historical data for {} is already up to date", figi);
-                continue;
-            }
 
             info!(
                 "Fetching historical data for {} from {} to {}",
@@ -89,7 +82,24 @@ impl HistoricalCandleDataService {
         info!("Historical candle data service completed");
     }
 
+    // Метод для очистки коллекции исторических данных
+    async fn clear_historical_collection(&self) {
+        info!("Clearing historical candles collection before starting data collection");
+        
+        let collection = self.mongo_db.get_historical_collection();
+        
+        match collection.delete_many(doc! {}).await {
+            Ok(result) => {
+                info!("Deleted {} documents from historical candles collection", result.deleted_count);
+            },
+            Err(e) => {
+                error!("Failed to clear historical candles collection: {}", e);
+            }
+        }
+    }
+
     async fn ensure_collection_setup(&self) {
+        // Используем новое имя коллекции
         let collection = self.mongo_db.get_historical_collection();
 
         // Create compound index on figi + time.seconds for efficient queries
@@ -114,9 +124,8 @@ impl HistoricalCandleDataService {
         }
     }
 
-
-
     async fn get_last_historical_date(&self, figi: &str) -> chrono::DateTime<Utc> {
+        // Используем новое имя коллекции
         let collection = self.mongo_db.get_historical_collection();
 
         // Query for the most recent record for this figi
@@ -148,46 +157,31 @@ impl HistoricalCandleDataService {
         }
     }
 
-    fn calculate_fetch_period(
-        &self,
-        last_date: chrono::DateTime<Utc>,
-    ) -> (chrono::DateTime<Utc>, chrono::DateTime<Utc>) {
-        // Start from the day after our last record
-        let mut start_date = (last_date + Duration::seconds(60))
-            .date()
-            .and_hms_opt(0, 0, 0)
-            .unwrap()
-            .with_timezone(&Utc);
-
-        // End date is yesterday (we don't want today's incomplete data)
-
-        let max_history_date = Utc::now()
-            - Duration::days(
-                self.settings
-                    .app_config
-                    .historical_candle_data
-                    .max_days_history as i64,
-            );
-        if max_history_date < start_date {
-            start_date = max_history_date
-                .date()
-                .and_hms_opt(0, 0, 0)
-                .unwrap()
-                .with_timezone(&Utc);
-            info!(
-                "Extending historical data fetch to maximum history of {} days",
-                self.settings
-                    .app_config
-                    .historical_candle_data
-                    .max_days_history
-            );
-        }
+    // Упрощенный метод расчета периода для запроса данных
+    fn calculate_fetch_period(&self) -> (chrono::DateTime<Utc>, chrono::DateTime<Utc>) {
+        // Конечная дата - вчерашний день (чтобы избежать неполных данных за сегодня)
         let end_date = Utc::now()
             .date()
             .and_hms_opt(0, 0, 0)
             .unwrap()
             .with_timezone(&Utc)
             - Duration::days(1);
+        
+        // Начальная дата - отступаем назад на max_days_history от конечной даты
+        let start_date = end_date - Duration::days(
+            self.settings
+                .app_config
+                .historical_candle_data
+                .max_days_history as i64,
+        );
+        
+        info!(
+            "Setting historical data fetch period to {} days (from {} to {})",
+            self.settings.app_config.historical_candle_data.max_days_history,
+            start_date.format("%Y-%m-%d"),
+            end_date.format("%Y-%m-%d"),
+        );
+        
         (start_date, end_date)
     }
 
@@ -241,7 +235,6 @@ impl HistoricalCandleDataService {
                                 let mut documents = Vec::with_capacity(candle_count);
 
                                 for candle in candles_response.candles {
-                                    // Note: HistoricCandle doesn't have last_trade_ts field
                                     let doc = self.historic_candle_to_document(figi, candle);
                                     documents.push(doc);
                                 }

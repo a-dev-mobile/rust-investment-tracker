@@ -1,24 +1,28 @@
-use crate::{env_config::models::app_setting::AppSettings, features::market_reference::currency_rates::repository::CurrencyRatesRepository};
-use crate::features::moex_api::client::MoexApiClient;
+// src/features/market_reference/currency_rates/updater.rs
+use crate::{
+    env_config::models::app_setting::AppSettings,
+    features::db::MongoDb,
+    features::moex_api::client::MoexApiClient,
+};
 
 use std::sync::Arc;
 use tracing::{error, info};
 
 pub struct CurrencyRatesUpdater {
     api_client: MoexApiClient,
-    repository: Arc<CurrencyRatesRepository>,
+    mongo_db: Arc<MongoDb>,
     settings: Arc<AppSettings>,
 }
 
 impl CurrencyRatesUpdater {
     pub fn new(
         api_client: MoexApiClient, 
-        repository: Arc<CurrencyRatesRepository>,
+        mongo_db: Arc<MongoDb>,
         settings: Arc<AppSettings>,
     ) -> Self {
         Self {
             api_client,
-            repository,
+            mongo_db,
             settings,
         }
     }
@@ -66,8 +70,8 @@ impl CurrencyRatesUpdater {
         // Получаем данные от API
         match self.api_client.get_currency_rates().await {
             Ok(moex_rates) => {
-                // Передаем данные в репозиторий для обработки и сохранения
-                match self.repository.save_moex_rates(&moex_rates).await {
+                // Use MongoDb implementation directly instead of repository
+                match self.mongo_db.save_currency_rates(&moex_rates).await {
                     Ok(currency_rates) => {
                         info!("Currency rates updated successfully. Date: {}", currency_rates.date);
                     },

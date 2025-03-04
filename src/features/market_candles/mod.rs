@@ -1,1 +1,1 @@
-pub mod tinkoff_1m_historical;
+pub mod tinkoff_shares_1m_historical;

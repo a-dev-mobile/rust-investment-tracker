@@ -10,14 +10,15 @@ use env_config::models::{
     app_setting::AppSettings,
 };
 use features::{
-    db::{mongo_extensions::watchlists::models::DbUserConfigWatchlist, MongoDb}, market_candles::tinkoff_1m_historical::{
-        start_historical_candle_service, HistoricalCandleDataService,
-    }, market_data::TinkoffInstrumentsUpdater, market_reference::currency_rates::{CurrencyRatesRepository, CurrencyRatesUpdater}, moex_api::MoexApiClient, tinkoff_market_data_stream::MarketDataStreamer
-
+    db::{mongo_extensions::watchlists::models::DbUserConfigWatchlist, MongoDb},
+    market_candles::tinkoff_shares_1m_historical::{
+        scheduler::start_historical_candle_service, service::HistoricalCandleDataService,
+    },
+    market_data::TinkoffInstrumentsUpdater,
+    moex_api::MoexApiClient,
+    tinkoff_market_data_stream::MarketDataStreamer,
+    update::currency_rates::updater::CurrencyRatesUpdater,
 };
-
-    
-
 
 use services::tinkoff::client_grpc::TinkoffClient;
 
@@ -93,7 +94,7 @@ pub async fn start_tinkoff_market_data_updater(
     settings: Arc<AppSettings>,
     client: Arc<TinkoffClient>,
 ) {
-    let updater = TinkoffInstrumentsUpdater::new( mongo_db, settings, client).await;
+    let updater = TinkoffInstrumentsUpdater::new(mongo_db, settings, client).await;
     tokio::spawn(async move {
         updater.start_update_loop().await;
     });
@@ -130,15 +131,12 @@ async fn main() {
     .expect("Invalid server address configuration - cannot start server");
 
     // Setup databases
-    let  mongo_db = setup_databases(&settings).await;
+    let mongo_db = setup_databases(&settings).await;
 
     let mongodb_arc = Arc::new(mongo_db.clone());
 
     // Create application router
-    let app = create_app(
-
-        mongo_db,
-    );
+    let app = create_app(mongo_db);
 
     // Initialize Tinkoff client
     let tinkoff_client = Arc::new(
@@ -149,7 +147,6 @@ async fn main() {
 
     // Start background services
     start_tinkoff_market_data_updater(
-
         mongodb_arc.clone(),
         settings.clone(),
         tinkoff_client.clone(),
@@ -189,11 +186,8 @@ async fn start_currency_rates_updater(mongo_db: Arc<MongoDb>, settings: Arc<AppS
     // Инициализация API клиента
     let api_client = MoexApiClient::new();
 
-    // Инициализация репозитория
-    let repository = Arc::new(CurrencyRatesRepository::new(mongo_db.clone()));
-
     // Создаем и запускаем планировщик обновлений с настройками
-    let updater = CurrencyRatesUpdater::new(api_client, repository, settings);
+    let updater = CurrencyRatesUpdater::new(api_client, mongo_db.clone(), settings);
 
     // Запускаем планировщик в отдельной задаче
     tokio::spawn(async move {

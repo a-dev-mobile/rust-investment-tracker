@@ -1,7 +1,8 @@
 use std::sync::Arc;
 use tracing::{error, info};
 
-use super::HistoricalCandleDataService;
+use super::service::HistoricalCandleDataService;
+
 
 impl HistoricalCandleDataService {
     pub async fn run_at_startup(&self) {

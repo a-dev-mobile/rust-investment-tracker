@@ -28,7 +28,7 @@ impl Collections {
 
     pub const CANDLES_TRACKING: &'static str = "candles_tracking";
     pub const TINKOFF_1M: &'static str = "tinkoff_1m";
-    pub const TINKOFF_1M_HISTORICAL: &'static str = "tinkoff_1m_historical";
+    pub const TINKOFF_1M_SHARES_1M_HISTORICAL: &'static str = "tinkoff_shares_1m_historical";
 }
 
 #[derive(Clone)]
@@ -121,6 +121,6 @@ impl MongoDb {
     pub fn get_historical_collection(&self) -> Collection<Document> {
         self.client
             .database(DbNames::MARKET_CANDLES)
-            .collection::<Document>(Collections::TINKOFF_1M_HISTORICAL)
+            .collection::<Document>(Collections::TINKOFF_1M_SHARES_1M_HISTORICAL)
     }
 }
