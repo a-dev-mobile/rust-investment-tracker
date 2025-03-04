@@ -21,7 +21,7 @@ timeout = 30   # seconds
 keepalive = 60 # seconds
 
 [tinkoff_market_data_updater]
-enabled = false
+enabled = true
 interval_seconds = 10  # 
 max_retries = 3
 retry_delay_seconds = 5
@@ -51,6 +51,6 @@ timezone = "Europe/Moscow"
 
 
 [historical_candle_data]
-enabled = true
-max_days_history = 1095     # How many days of history to keep
+enabled = false
+max_days_history = 20     # How many days of history to keep
 request_delay_ms = 200       # Delay between API requests to avoid rate limiting

@@ -1,14 +1,8 @@
 use crate::{
-    db::{
-        mongo_db::{Collections, DbNames},
-        MongoDb,
-    },
-    env_config::models::app_setting::AppSettings,
-    features::user_config::watchlists::WatchlistService,
-    gen::tinkoff_public_invest_api_contract_v1::{
+
+    env_config::models::app_setting::AppSettings, features::db::MongoDb, gen::tinkoff_public_invest_api_contract_v1::{
         CandleInterval, GetCandlesRequest, HistoricCandle,
-    },
-    services::tinkoff::client_grpc::TinkoffClient,
+    }, services::tinkoff::client_grpc::TinkoffClient
 };
 
 use chrono::{Duration, TimeZone, Utc};
@@ -22,7 +16,6 @@ use tracing::{error, info, warn};
 pub struct HistoricalCandleDataService {
     client: Arc<TinkoffClient>,
     mongo_db: Arc<MongoDb>,
-    watchlist_service: Arc<WatchlistService>,
     settings: Arc<AppSettings>,
 }
 
@@ -30,13 +23,11 @@ impl HistoricalCandleDataService {
     pub fn new(
         client: Arc<TinkoffClient>,
         mongo_db: Arc<MongoDb>,
-        watchlist_service: Arc<WatchlistService>,
         settings: Arc<AppSettings>,
     ) -> Self {
         Self {
             client,
             mongo_db,
-            watchlist_service,
             settings,
         }
     }
@@ -53,14 +44,8 @@ impl HistoricalCandleDataService {
         // Ensure collection with proper indexes exists
         self.ensure_collection_setup().await;
 
-        // Get list of watchlisted instruments
-        let watchlists = match self.watchlist_service.get_enabled_watchlists().await {
-            Ok(list) => list,
-            Err(e) => {
-                error!("Failed to get watchlists: {}", e);
-                return;
-            }
-        };
+        // Get list of watchlisted instruments directly from MongoDB
+        let watchlists = self.mongo_db.get_enabled_watchlists().await;
 
         if watchlists.is_empty() {
             info!("No enabled instruments found in watchlists");
@@ -105,7 +90,7 @@ impl HistoricalCandleDataService {
     }
 
     async fn ensure_collection_setup(&self) {
-        let collection = self.get_historical_collection();
+        let collection = self.mongo_db.get_historical_collection();
 
         // Create compound index on figi + time.seconds for efficient queries
         let index_options = IndexOptions::builder().unique(false).build();
@@ -129,15 +114,10 @@ impl HistoricalCandleDataService {
         }
     }
 
-    fn get_historical_collection(&self) -> mongodb::Collection<Document> {
-        self.mongo_db
-            .client
-            .database(DbNames::MARKET_CANDLES)
-            .collection::<Document>(Collections::TINKOFF_1M_HISTORICAL)
-    }
+
 
     async fn get_last_historical_date(&self, figi: &str) -> chrono::DateTime<Utc> {
-        let collection = self.get_historical_collection();
+        let collection = self.mongo_db.get_historical_collection();
 
         // Query for the most recent record for this figi
         let filter = doc! { "figi": figi };
@@ -217,7 +197,7 @@ impl HistoricalCandleDataService {
         start_date: chrono::DateTime<Utc>,
         end_date: chrono::DateTime<Utc>,
     ) {
-        let collection = self.get_historical_collection();
+        let collection = self.mongo_db.get_historical_collection();
         let mut current_date = start_date;
 
         // Process one day at a time

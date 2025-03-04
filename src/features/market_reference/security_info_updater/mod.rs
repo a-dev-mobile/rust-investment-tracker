@@ -9,7 +9,7 @@ use crate::{
     services::tinkoff::client_grpc::TinkoffClient,
 };
 use std::sync::Arc;
-use sqlx::PgPool;
+
 use tracing::info;
 
 pub struct CandlesTrackingUpdater {

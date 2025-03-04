@@ -1,7 +1,9 @@
 use mongodb::bson::doc;
 use tracing::{error, info};
 
-use crate::db::mongo_db::Collections;
+
+
+use crate::features::db::mongo_db::Collections;
 
 use super::TinkoffInstrumentsUpdater;
 

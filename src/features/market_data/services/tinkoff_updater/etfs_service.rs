@@ -1,9 +1,9 @@
 use mongodb::bson::doc;
 use tracing::{error, info};
 
-use crate::db::mongo_db::Collections;
-
 use super::TinkoffInstrumentsUpdater;
+use crate::features::db::mongo_db::Collections;
+
 
 impl TinkoffInstrumentsUpdater {
     pub(super) async fn update_etfs(&self) -> Result<(), Box<dyn std::error::Error>> {

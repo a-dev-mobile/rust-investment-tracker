@@ -1,5 +1,6 @@
-use crate::db::mongo_db::{Collections, DbNames, MongoDb};
-use crate::features::moex_api::models::MoexRatesResponse;
+
+use crate::features::db::mongo_db::{Collections, DbNames};
+use crate::features::{db::MongoDb, moex_api::models::MoexRatesResponse};
 use crate::features::market_reference::currency_rates::models::CurrencyRatesResponse;
 use crate::features::market_reference::currency_rates::mappers::MoexRatesMapper;
 

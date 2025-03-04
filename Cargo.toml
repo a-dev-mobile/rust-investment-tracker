@@ -19,7 +19,7 @@ serde_json = "1.0.139"
 config = "0.15.8"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["fmt", "env-filter", "json"] }
-sqlx = { version = "0.8.3", features = ["postgres", "runtime-tokio-native-tls", "macros", "time", "uuid", "chrono","runtime-tokio", "tls-rustls",  ] }
+
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
 chrono = { version = "0.4.40", features = ["serde"] }
 chrono-tz = "0.10.1"

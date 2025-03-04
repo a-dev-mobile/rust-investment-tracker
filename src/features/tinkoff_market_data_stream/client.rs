@@ -1,25 +1,25 @@
-use chrono::{TimeZone, Utc};
+
 use mongodb::bson::{doc, Document};
-use sqlx::PgPool;
+
+use std::collections::HashSet;
 use std::sync::Arc;
+use std::sync::Mutex;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{metadata::MetadataValue, Request};
 use tracing::{debug, error, info};
-use std::collections::HashSet;
-use std::sync::Mutex;
 
+use crate::features::db::mongo_db::DbNames;
+use crate::features::db::mongo_extensions::watchlists::models::DbUserConfigWatchlist;
+use crate::features::db::MongoDb;
 use crate::{
-    db::MongoDb, env_config::models::app_setting::AppSettings, features::{
-        core::models::candle_interval::MyCandleInterval,
-        user_config::watchlists::models::DbUserConfigWatchlist,
-    }, gen::tinkoff_public_invest_api_contract_v1::{
-        market_data_request, market_data_response, Candle, CandleInstrument, InfoInstrument,
-        MarketDataRequest, MarketDataResponse, OrderBookInstrument, SubscribeCandlesRequest,
-        SubscribeInfoRequest, SubscribeOrderBookRequest,
-        SubscribeTradesRequest, TradeInstrument,
-    }, services::tinkoff::client_grpc::TinkoffClient,
-    db::mongo_db::{Collections, DbNames}
+    env_config::models::app_setting::AppSettings,
+
+    gen::tinkoff_public_invest_api_contract_v1::{
+        market_data_request, market_data_response, Candle, CandleInstrument, MarketDataRequest,
+        MarketDataResponse, SubscribeCandlesRequest,
+    },
+    services::tinkoff::client_grpc::TinkoffClient,
 };
 
 pub struct MarketDataStreamer {
@@ -69,7 +69,10 @@ impl MarketDataStreamer {
             return;
         }
 
-        info!("Found {} active instruments to stream", self.figi_list.len());
+        info!(
+            "Found {} active instruments to stream",
+            self.figi_list.len()
+        );
 
         // Create subscription request for candles
         let request = self.create_candles_subscription_request();
@@ -188,7 +191,8 @@ impl MarketDataStreamer {
         }
 
         // Получаем коллекцию для данного FIGI
-        let collection = self.mongo_db
+        let collection = self
+            .mongo_db
             .client
             .database(DbNames::MARKET_CANDLES)
             .collection::<Document>(&collection_name);
@@ -226,16 +230,19 @@ impl MarketDataStreamer {
         }
     }
     async fn ensure_time_index(&self, collection_name: &str) {
-        let collection = self.mongo_db
+        let collection = self
+            .mongo_db
             .client
             .database(DbNames::MARKET_CANDLES)
             .collection::<Document>(collection_name);
-        match collection.create_index(
-            mongodb::IndexModel::builder()
-                .keys(doc! { "time.seconds": 1 })
-                .build(),
-            
-        ).await {
+        match collection
+            .create_index(
+                mongodb::IndexModel::builder()
+                    .keys(doc! { "time.seconds": 1 })
+                    .build(),
+            )
+            .await
+        {
             Ok(_) => info!("Created time index for collection {}", collection_name),
             Err(e) => error!("Failed to create time index for {}: {}", collection_name, e),
         }

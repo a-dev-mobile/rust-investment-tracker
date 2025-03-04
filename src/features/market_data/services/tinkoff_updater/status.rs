@@ -1,30 +1,65 @@
+use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use mongodb::bson::{doc, Document};
-use chrono::Utc;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tracing::info;
 
 use super::TinkoffInstrumentsUpdater;
 
+/// Converts RFC3339 timestamp to Moscow time in a human-readable format
+fn to_human_readable(rfc3339_time: &str) -> String {
+    // Parse the RFC3339 string into a DateTime
+    match DateTime::parse_from_rfc3339(rfc3339_time) {
+        Ok(utc_time) => {
+            // Moscow timezone is UTC+3
+            let moscow_offset = FixedOffset::east_opt(3 * 3600).unwrap();
+            let moscow_time = utc_time.with_timezone(&moscow_offset);
+
+
+            moscow_time
+                .format("%d.%m.%Y %H:%M:%S")
+                .to_string()
+        }
+        Err(_) => format!("Invalid time format: {}", rfc3339_time),
+    }
+}
 
 impl TinkoffInstrumentsUpdater {
     // New method to initialize the status collection
-    pub(super) async fn initialize_status_collection(&self) -> Result<(), mongodb::error::Error> {
+
+    /// Updates a collection's status field
+    async fn update_collection_status(
+        &self,
+        collection_name: &str,
+        status: &str,
+    ) -> Result<(), mongodb::error::Error> {
+
         let status_collection = self.mongo_db.status_collection();
+        let rfc3339_now = Utc::now().to_rfc3339();
+        let moscow_readable = to_human_readable(&rfc3339_now);
 
-        // Check if the collection has any documents
-        let count = status_collection.count_documents(doc! {}).await?;
+        // Define field names for better readability
+        let status_field = format!("{}_status", collection_name);
+        let update_at_field = format!("{}_update_at", collection_name);
 
-        if count == 0 {
-            // Initialize with an empty document
-            status_collection
-                .insert_one(doc! {
-                    "initialized_at": Utc::now().to_rfc3339(),
-                })
-                .await?;
-            info!("Status collection initialized with a base document");
-        } else {
-            info!("Status collection already exists with {} documents", count);
-        }
+        // Log status change
+        info!(
+            "Status set to '{}' for {} collection at {}",
+            status, collection_name, moscow_readable
+        );
+
+        // Update document with flattened structure
+        status_collection
+            .update_one(
+                doc! {},
+                doc! {
+                    "$set": {
+                        status_field: status,
+                        update_at_field: moscow_readable,
+
+                    }
+                },
+            )
+            .await?;
 
         Ok(())
     }
@@ -33,61 +68,15 @@ impl TinkoffInstrumentsUpdater {
         &self,
         collection_name: &str,
     ) -> Result<(), mongodb::error::Error> {
-        // First ensure the status collection exists
-        self.initialize_status_collection().await?;
-
-        let status_collection = self.mongo_db.status_collection();
-        let now = Utc::now().to_rfc3339();
-        
-        status_collection
-            .update_one(
-                doc! {},
-                doc! {
-                    "$set": {
-                        collection_name: {
-                            "status": "updating",
-                            "updated_at": now.clone()
-                        }
-                    }
-                },
-            )
-            .await?;
-        info!(
-            "Status set to 'updating' for {} collection at {}",
-            collection_name,
-            now
-        );
-        Ok(())
+        self.update_collection_status(collection_name, "updating")
+            .await
     }
 
     pub(super) async fn set_status_ready(
         &self,
         collection_name: &str,
     ) -> Result<(), mongodb::error::Error> {
-        // First ensure the status collection exists
-        self.initialize_status_collection().await?;
-
-        let status_collection = self.mongo_db.status_collection();
-        let now = Utc::now().to_rfc3339();
-        
-        status_collection
-            .update_one(
-                doc! {},
-                doc! {
-                    "$set": {
-                        collection_name: {
-                            "status": "ready",
-                            "updated_at": now.clone()
-                        }
-                    }
-                },
-            )
-            .await?;
-        info!(
-            "Status set to 'ready' for {} collection at {}",
-            collection_name,
-            &now
-        );
-        Ok(())
+        self.update_collection_status(collection_name, "ready")
+            .await
     }
 }

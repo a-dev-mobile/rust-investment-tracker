@@ -8,10 +8,9 @@ mod shares_service;
 mod status;
 
 use crate::{
-    db::MongoDb, env_config::models::app_setting::AppSettings,
-    services::tinkoff::client_grpc::TinkoffClient,
+  env_config::models::app_setting::AppSettings, features::db::MongoDb, services::tinkoff::client_grpc::TinkoffClient
 };
-use sqlx::PgPool;
+
 use std::sync::Arc;
 use tracing::info;
 
@@ -23,7 +22,7 @@ pub struct TinkoffInstrumentsUpdater {
 
 impl TinkoffInstrumentsUpdater {
     pub async fn new(
-        #[allow(unused_variables)] db_pool: Arc<PgPool>,
+    
         mongo_db: Arc<MongoDb>,
         settings: Arc<AppSettings>,
         client: Arc<TinkoffClient>,
